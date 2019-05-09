@@ -1,7 +1,55 @@
-hs.hotkey.bind({"alt"}, "d", function()
-  hs.reload()
-end)
-hs.alert.show("Config loaded")
+hs.hotkey.bind({"alt"}, "d", function() hs.reload() end)
+
+hs.hotkey.bind({"alt"}, "h", function() hs.hints.windowHints() end)
+hs.hints.style = "vimperator"
+
+function frame(fn)
+    return function()
+        local win = hs.window.focusedWindow()
+        local f = win:frame()
+        local screen = win:screen()
+        local s = screen:frame()
+        fn(f, s)
+        win:setFrame(f)
+    end
+end
+
+for i = 1,9 do
+    hs.hotkey.bind(
+            { "alt" }, tostring(i),
+            frame(
+                    function(f, s)
+                        f.x = s.x + s.w * (10 - i) / 10
+                        f.w = s.w * i / 10
+                        f.y = s.y
+                        f.h = s.h
+                    end
+            )
+    )
+    hs.hotkey.bind(
+            { "alt", "shift" }, tostring(i),
+            frame(
+                    function(f, s)
+                        f.x = s.x
+                        f.w = s.w * i / 10
+                        f.y = s.y
+                        f.h = s.h
+                    end
+            )
+    )
+end
+
+hs.hotkey.bind(
+        {'alt'}, '0',
+        frame(
+            function(f, s)
+                f.x = s.x
+                f.w = s.w
+                f.y = s.y
+                f.h = s.h
+            end
+        )
+)
 
 M = 10
 N = 10
@@ -18,14 +66,7 @@ min = math.min
 
 function bind(mods, key, fn)
   k:bind(mods, key,
-          function()
-            local win = hs.window.focusedWindow()
-            local f = win:frame()
-            local screen = win:screen()
-            local max = screen:frame()
-            fn(f, max)
-            win:setFrame(f)
-          end
+          frame(fn)
   )
 end
 
@@ -116,3 +157,5 @@ end
 
 resizeBindings('h', 'l', 'x', 'w', M)
 resizeBindings('k', 'j', 'y', 'h', N)
+
+hs.alert.show("Config loaded")
