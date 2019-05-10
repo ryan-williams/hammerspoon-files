@@ -66,7 +66,6 @@ min = math.min
 
 function bind(mods, keys, fn)
   for i,key in ipairs(keys) do
-    print("Binding "..((type(mods)=='table') and table.concat(mods, ',') or mods)..' '..key)
     k:bind(mods, key, frame(fn))
   end
 end
@@ -129,5 +128,127 @@ end
 
 resizeBindings({ 'h', 'left' }, { 'l', 'right' }, 'x', 'w', M)
 resizeBindings({ 'k',   'up' }, { 'j',  'down' }, 'y', 'h', N)
+
+function map(tbl, f)
+  local t = {}
+  for k,v in pairs(tbl) do
+    t[k] = f(v)
+  end
+  return t
+end
+
+function mapToArr(tbl, f)
+  local t = {}
+  local i = 1
+  for k,v in pairs(tbl) do
+    t[i] = f(k, v)
+    i = i + 1
+  end
+  return t
+end
+
+function reduce(tbl, f)
+  local t = nil
+  for k,v in pairs(tbl) do
+    if t == nil then
+      t = v
+    else
+      t = f(t, v)
+    end
+  end
+  return t
+end
+
+function foldLeft(tbl, z, f)
+  local t = z
+  for k,v in pairs(tbl) do
+      t = f(t, v)
+  end
+  return t
+end
+
+function str(o)
+  if type(o) == 'table' then
+    return '{ '..table.concat(mapToArr(o, function(k, v) return k..': '..str(v) end), ', ')..' }'
+  else
+    return tostring(o)
+  end
+end
+
+function bigsmall(big, sml) return {
+  [ "Google Chrome" ] = { screen = big, shape = { x=0.2, y=0, w=0.6, h=1 } },
+  [        "iTerm2" ] = { screen = big, shape = { x=0  , y=0, w=1  , h=1 } },
+  [ "IntelliJ IDEA" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
+  [         "Emacs" ] = { screen = big, shape = { x=0.3, y=0, w=0.7, h=1 } },
+  [         "Slack" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
+  [        "Gitter" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
+  [  "Sublime Text" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
+  [        "Safari" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
+  [          "GCal" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
+  [        "Signal" ] = { screen = sml, shape = { x=0  , y=0, w=1  , h=1 } },
+}
+end
+
+function laptopOnly(laptop)
+  local right = { x=0.1, y=0, w=0.9, h=1 }
+  local  full = { x=0  , y=0, w=1  , h=1 }
+  return {
+    [ "Google Chrome" ] = { screen = laptop, shape = right },
+    [        "iTerm2" ] = { screen = laptop, shape =  full },
+    [ "IntelliJ IDEA" ] = { screen = laptop, shape = right },
+    [         "Emacs" ] = { screen = laptop, shape = right },
+    [         "Slack" ] = { screen = laptop, shape = right },
+    [        "Gitter" ] = { screen = laptop, shape = right },
+    [  "Sublime Text" ] = { screen = laptop, shape = right },
+    [        "Safari" ] = { screen = laptop, shape = right },
+    [          "GCal" ] = { screen = laptop, shape = right },
+    [        "Signal" ] = { screen = laptop, shape =  full },
+  }
+end
+
+function layout(map)
+  hs.layout.apply(
+      mapToArr(
+          map,
+          function(k, v)
+            return { k, nil, v.screen, v.shape, nil, nil }
+          end
+      )
+  )
+end
+
+function screenstrs()
+  local screens = hs.screen.allScreens()
+  return table.concat(map(screens, function(s) s:name() end), ',')
+end
+
+function findscreen(name)
+  local screen = hs.screen.find(name)
+  if screen == nil then
+    hs.alert("Couldn't find "..name..": "..screenstrs())
+  end
+  return screen
+end
+
+hs.hotkey.bind(
+    { 'cmd', 'ctrl' }, 'm',
+    function()
+      local laptop = findscreen('Color LCD')
+      local     lg = findscreen('LG ULTRAWIDE')
+      if laptop == nil or lg == nil then return nil end
+
+      layout(bigsmall(lg, laptop))
+    end
+)
+
+hs.hotkey.bind(
+    { 'cmd', 'ctrl' }, 'l',
+    function()
+      local laptop = findscreen('Color LCD')
+      if laptop == nil then return nil end
+
+      layout(laptopOnly(laptop))
+    end
+)
 
 hs.alert.show("Config loaded")
