@@ -162,7 +162,7 @@ end
 function foldLeft(tbl, z, f)
   local t = z
   for k,v in pairs(tbl) do
-      t = f(t, v)
+    t = f(t, v)
   end
   return t
 end
@@ -248,6 +248,37 @@ hs.hotkey.bind(
       if laptop == nil then return nil end
 
       layout(laptopOnly(laptop))
+    end
+)
+
+function focusApp(name)
+  local app = hs.application.find(name) or hs.application.open(name)
+  app:focusedWindow():focus()
+end
+
+function bindFocusApp(name, modifiers, hotkey)
+  hs.hotkey.bind(modifiers, hotkey, function() focusApp(name) end)
+end
+
+appShortcuts = {
+  [      "Google Chrome" ] = { modifiers = { 'alt', 'cmd' }, key = 'c' },
+  [             "Safari" ] = { modifiers = { 'alt', 'cmd' }, key = 's' },
+  [             "Finder" ] = { modifiers = { 'alt', 'cmd' }, key = 'f' },
+  [             "iTerm2" ] = { modifiers =   'alt'         , key = 't' },
+  [      "IntelliJ IDEA" ] = { modifiers =   'alt'         , key = 'i' },
+  [              "Emacs" ] = { modifiers =   'alt'         , key = 'e' },
+  [              "Slack" ] = { modifiers =   'alt'         , key = 'k' },
+  [             "Gitter" ] = { modifiers =   'alt'         , key = 'g' },
+  [       "Sublime Text" ] = { modifiers =   'alt'         , key = 'm' },
+  [               "GCal" ] = { modifiers =   'alt'         , key = 'r' },
+  [             "Signal" ] = { modifiers =   'alt'         , key = 'n' },
+  [ "System Preferences" ] = { modifiers =   'alt'         , key = 's' },
+}
+
+mapToArr(
+    appShortcuts,
+    function(name, key)
+      bindFocusApp(name, key.modifiers, key.key)
     end
 )
 
