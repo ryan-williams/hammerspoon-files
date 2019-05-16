@@ -234,7 +234,7 @@ hs.hotkey.bind(
     { 'cmd', 'ctrl' }, 'm',
     function()
       local laptop = findscreen('Color LCD')
-      local     lg = findscreen('LG ULTRAWIDE')
+      local     lg = findscreen('LG ULTRAWIDE') or findscreen('DELL U2715H')
       if laptop == nil or lg == nil then return nil end
 
       layout(bigsmall(lg, laptop))
