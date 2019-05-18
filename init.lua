@@ -263,7 +263,7 @@ end
 appShortcuts = {
   [      "Google Chrome" ] = { modifiers = { 'alt', 'cmd' }, key = 'c' },
   [             "Safari" ] = { modifiers = { 'alt', 'cmd' }, key = 's' },
-  [             "Finder" ] = { modifiers = { 'alt', 'cmd' }, key = 'f' },
+  --[             "Finder" ] = { modifiers = { 'alt', 'cmd' }, key = 'f' },
   [             "iTerm2" ] = { modifiers =   'alt'         , key = 't' },
   [      "IntelliJ IDEA" ] = { modifiers =   'alt'         , key = 'i' },
   [              "Emacs" ] = { modifiers =   'alt'         , key = 'e' },
@@ -274,6 +274,27 @@ appShortcuts = {
   [             "Signal" ] = { modifiers =   'alt'         , key = 'n' },
   [ "System Preferences" ] = { modifiers =   'alt'         , key = 's' },
 }
+
+-- Handle Finder specially; open a new window if none exist
+hs.hotkey.bind({ 'cmd', 'alt' }, 'f',
+    function()
+      local finder = hs.application.find('Finder')
+      local window = finder:focusedWindow()
+      if window == nil then
+        print'applescript…'
+        hs.applescript([[
+tell application "System Events"
+  tell process "Finder"
+    set frontmost to true
+    click menu item "New Finder Window" of menu "File" of menu bar 1
+  end tell
+end tell
+        ]])
+      else
+        window:focus()
+      end
+    end
+)
 
 mapToArr(
     appShortcuts,
