@@ -253,7 +253,22 @@ hs.hotkey.bind(
 
 function focusApp(name)
   local app = hs.application.find(name) or hs.application.open(name)
-  app:focusedWindow():focus()
+  if app == nil then
+    hs.alert("Couldn't find "..name)
+    return
+  end
+  local focused = app:focusedWindow()
+  if focused == nil then
+    hs.alert("No focused window for "..name)
+    local windows = app:allWindows()
+    if #windows > 0 then
+      windows[1]:focus()
+    else
+      return
+    end
+  else
+    focused:focus()
+  end
 end
 
 function bindFocusApp(name, modifiers, hotkey)
@@ -261,18 +276,17 @@ function bindFocusApp(name, modifiers, hotkey)
 end
 
 appShortcuts = {
-  [      "Google Chrome" ] = { modifiers = { 'alt', 'cmd' }, key = 'c' },
-  [             "Safari" ] = { modifiers = { 'alt', 'cmd' }, key = 's' },
-  --[             "Finder" ] = { modifiers = { 'alt', 'cmd' }, key = 'f' },
-  [             "iTerm2" ] = { modifiers =   'alt'         , key = 't' },
-  [      "IntelliJ IDEA" ] = { modifiers =   'alt'         , key = 'i' },
-  [              "Emacs" ] = { modifiers =   'alt'         , key = 'e' },
-  [              "Slack" ] = { modifiers =   'alt'         , key = 'k' },
-  [             "Gitter" ] = { modifiers =   'alt'         , key = 'g' },
-  [       "Sublime Text" ] = { modifiers =   'alt'         , key = 'm' },
-  [               "GCal" ] = { modifiers =   'alt'         , key = 'r' },
-  [             "Signal" ] = { modifiers =   'alt'         , key = 'n' },
-  [ "System Preferences" ] = { modifiers =   'alt'         , key = 's' },
+  [          "Google Chrome" ] = { modifiers = { 'alt', 'cmd' }, key = 'c' },
+  [                 "Safari" ] = { modifiers = { 'alt', 'cmd' }, key = 's' },
+  [                 "iTerm2" ] = { modifiers =   'alt'         , key = 't' },
+  [ "com.jetbrains.intellij" ] = { modifiers =   'alt'         , key = 'i' },
+  [                  "Emacs" ] = { modifiers =   'alt'         , key = 'e' },
+  [                  "Slack" ] = { modifiers =   'alt'         , key = 'k' },
+  [                 "Gitter" ] = { modifiers =   'alt'         , key = 'g' },
+  [           "Sublime Text" ] = { modifiers =   'alt'         , key = 'm' },
+  [                   "GCal" ] = { modifiers =   'alt'         , key = 'r' },
+  [                 "Signal" ] = { modifiers =   'alt'         , key = 'n' },
+  [     "System Preferences" ] = { modifiers =   'alt'         , key = 's' },
 }
 
 -- Handle Finder specially; open a new window if none exist
