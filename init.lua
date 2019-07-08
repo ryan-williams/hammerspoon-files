@@ -175,9 +175,12 @@ function str(o)
   end
 end
 
-function bigsmall(big, sml) return {
+function bigsmall(big, sml)
+  local verticalDell = findscreen('DELL U2412M')
+  print('vertical dell: '..(verticalDell and verticalDell:name() or '??'))
+  return {
   [ "Google Chrome" ] = { screen = big, shape = { x=0.2, y=0, w=0.6, h=1 } },
-  [        "iTerm2" ] = { screen = big, shape = { x=0  , y=0, w=1  , h=1 } },
+  [        "iTerm2" ] = { screen = verticalDell or big, shape = { x=0  , y=0, w=1  , h=1 } },
   [ "IntelliJ IDEA" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
   [         "Emacs" ] = { screen = big, shape = { x=0.3, y=0, w=0.7, h=1 } },
   [         "Slack" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
@@ -222,12 +225,22 @@ function screenstrs()
   return table.concat(map(screens, function(s) s:name() end), ',')
 end
 
-function findscreen(name)
-  local screen = hs.screen.find(name)
-  if screen == nil then
-    hs.alert("Couldn't find "..name..": "..screenstrs())
+function findscreen(...)
+  print('args: '..str(arg)..' '..str(...))
+  if type(...) == 'string' then
+    local screen = hs.screen.find(...)
+    if screen ~= nil then
+      return screen
+    end
+  else
+    for _,name in ipairs(...) do
+      local screen = hs.screen.find(name)
+      if screen ~= nil then
+        return screen
+      end
+    end
   end
-  return screen
+  hs.alert("Couldn't find screens: "..str(arg).." (available: "..screenstrs()..")")
 end
 
 hs.hotkey.bind(
@@ -235,7 +248,10 @@ hs.hotkey.bind(
     function()
       local laptop = findscreen('Color LCD')
       local     lg = findscreen('LG ULTRAWIDE') or findscreen('DELL U2715H')
-      if laptop == nil or lg == nil then return nil end
+      if laptop == nil or lg == nil then
+        hs.alert('missing a screen; laptop: '..(laptop and laptop:name() or '??')..', LG: '..(lg and lg:name() or '??'))
+        return nil
+      end
 
       layout(bigsmall(lg, laptop))
     end
@@ -252,7 +268,12 @@ hs.hotkey.bind(
 )
 
 function focusApp(name)
-  local app = hs.application.find(name) or hs.application.open(name)
+  local app = hs.application.find(name)
+  if app == nil then
+    hs.alert('Opening '..name)
+    hs.application.open(name, 0, true)
+    return
+  end
   if app == nil then
     hs.alert("Couldn't find "..name)
     return
@@ -278,15 +299,17 @@ end
 appShortcuts = {
   [          "Google Chrome" ] = { modifiers = { 'alt', 'cmd' }, key = 'c' },
   [                 "Safari" ] = { modifiers = { 'alt', 'cmd' }, key = 's' },
-  [                 "iTerm2" ] = { modifiers =   'alt'         , key = 't' },
+  [                  "iTerm" ] = { modifiers =   'alt'         , key = 't' },
   [ "com.jetbrains.intellij" ] = { modifiers =   'alt'         , key = 'i' },
   [                  "Emacs" ] = { modifiers =   'alt'         , key = 'e' },
+  [                "Preview" ] = { modifiers =   'alt'         , key = 'v' },
   [                  "Slack" ] = { modifiers =   'alt'         , key = 'k' },
   [                 "Gitter" ] = { modifiers =   'alt'         , key = 'g' },
   [           "Sublime Text" ] = { modifiers =   'alt'         , key = 'm' },
   [                   "GCal" ] = { modifiers =   'alt'         , key = 'r' },
   [                 "Signal" ] = { modifiers =   'alt'         , key = 'n' },
   [     "System Preferences" ] = { modifiers =   'alt'         , key = 's' },
+  [             "VIP Access" ] = { modifiers =   'alt'         , key = 'j' },
 }
 
 -- Handle Finder specially; open a new window if none exist
