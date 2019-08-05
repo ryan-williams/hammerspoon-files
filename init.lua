@@ -310,6 +310,7 @@ appShortcuts = {
   [                 "Signal" ] = { modifiers =   'alt'         , key = 'n' },
   [     "System Preferences" ] = { modifiers =   'alt'         , key = 's' },
   [             "VIP Access" ] = { modifiers =   'alt'         , key = 'j' },
+  [                "zoom.us" ] = { modifiers =   'alt'         , key = 'z' },
 }
 
 -- Handle Finder specially; open a new window if none exist
