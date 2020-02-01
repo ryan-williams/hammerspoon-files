@@ -179,16 +179,17 @@ function bigsmall(big, sml)
   local verticalDell = findscreen('DELL U2412M')
   print('vertical dell: '..(verticalDell and verticalDell:name() or '??'))
   return {
-  [ "Google Chrome" ] = { screen = big, shape = { x=0.2, y=0, w=0.6, h=1 } },
-  [        "iTerm2" ] = { screen = verticalDell or big, shape = { x=0  , y=0, w=1  , h=1 } },
-  [ "IntelliJ IDEA" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
-  [         "Emacs" ] = { screen = big, shape = { x=0.3, y=0, w=0.7, h=1 } },
-  [         "Slack" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
-  [        "Gitter" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
-  [  "Sublime Text" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
-  [        "Safari" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
-  [          "GCal" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
-  [        "Signal" ] = { screen = sml, shape = { x=0  , y=0, w=1  , h=1 } },
+  [   "Google Chrome" ] = { screen = big, shape = { x=0.2, y=0, w=0.6, h=1 } },
+  [          "iTerm2" ] = { screen = verticalDell or big, shape = { x=0  , y=0, w=1  , h=1 } },
+  [   "IntelliJ IDEA" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
+  [           "Emacs" ] = { screen = big, shape = { x=0.3, y=0, w=0.7, h=1 } },
+  [           "Slack" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
+  [ "Microsoft Teams" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
+  [          "Gitter" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
+  [    "Sublime Text" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
+  [          "Safari" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
+  [            "GCal" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
+  [          "Signal" ] = { screen = sml, shape = { x=0  , y=0, w=1  , h=1 } },
 }
 end
 
@@ -196,16 +197,17 @@ function laptopOnly(laptop)
   local right = { x=0.1, y=0, w=0.9, h=1 }
   local  full = { x=0  , y=0, w=1  , h=1 }
   return {
-    [ "Google Chrome" ] = { screen = laptop, shape = right },
-    [        "iTerm2" ] = { screen = laptop, shape =  full },
-    [ "IntelliJ IDEA" ] = { screen = laptop, shape = right },
-    [         "Emacs" ] = { screen = laptop, shape = right },
-    [         "Slack" ] = { screen = laptop, shape = right },
-    [        "Gitter" ] = { screen = laptop, shape = right },
-    [  "Sublime Text" ] = { screen = laptop, shape = right },
-    [        "Safari" ] = { screen = laptop, shape = right },
-    [          "GCal" ] = { screen = laptop, shape = right },
-    [        "Signal" ] = { screen = laptop, shape =  full },
+    [   "Google Chrome" ] = { screen = laptop, shape = right },
+    [          "iTerm2" ] = { screen = laptop, shape =  full },
+    [   "IntelliJ IDEA" ] = { screen = laptop, shape = right },
+    [           "Emacs" ] = { screen = laptop, shape = right },
+    [           "Slack" ] = { screen = laptop, shape = right },
+    [ "Microsoft Teams" ] = { screen = laptop, shape = right },
+    [          "Gitter" ] = { screen = laptop, shape = right },
+    [    "Sublime Text" ] = { screen = laptop, shape = right },
+    [          "Safari" ] = { screen = laptop, shape = right },
+    [            "GCal" ] = { screen = laptop, shape = right },
+    [          "Signal" ] = { screen = laptop, shape =  full },
   }
 end
 
@@ -304,6 +306,7 @@ appShortcuts = {
   [                  "Emacs" ] = { modifiers =   'alt'         , key = 'e' },
   [                "Preview" ] = { modifiers =   'alt'         , key = 'v' },
   [                  "Slack" ] = { modifiers =   'alt'         , key = 'k' },
+  [        "Microsoft Teams" ] = { modifiers =   'alt'         , key = 'l' },
   [                 "Gitter" ] = { modifiers =   'alt'         , key = 'g' },
   [           "Sublime Text" ] = { modifiers =   'alt'         , key = 'm' },
   [                   "GCal" ] = { modifiers =   'alt'         , key = 'r' },
