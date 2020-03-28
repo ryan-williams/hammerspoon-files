@@ -306,7 +306,7 @@ appShortcuts = {
   [                  "Emacs" ] = { modifiers =   'alt'         , key = 'e' },
   [                "Preview" ] = { modifiers =   'alt'         , key = 'v' },
   [                  "Slack" ] = { modifiers =   'alt'         , key = 'k' },
-  [        "Microsoft Teams" ] = { modifiers =   'alt'         , key = 'l' },
+--   [        "Microsoft Teams" ] = { modifiers =   'alt'         , key = 'l' },
   [                 "Gitter" ] = { modifiers =   'alt'         , key = 'g' },
   [           "Sublime Text" ] = { modifiers =   'alt'         , key = 'm' },
   [                   "GCal" ] = { modifiers =   'alt'         , key = 'r' },
