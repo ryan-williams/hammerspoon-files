@@ -304,6 +304,7 @@ appShortcuts = {
   [          "Google Chrome" ] = { modifiers = { 'alt', 'cmd' }, key = 'c' },
   [                 "Safari" ] = { modifiers = { 'alt', 'cmd' }, key = 's' },
   [                  "iTerm" ] = { modifiers =   'alt'         , key = 't' },
+  [ "com.jetbrains.intellij" ] = { modifiers =   'alt'         , key = 'i' },
   [                   "Code" ] = { modifiers =   'alt'         , key = 'o' },
   [                  "Emacs" ] = { modifiers =   'alt'         , key = 'e' },
   [                "Preview" ] = { modifiers =   'alt'         , key = 'v' },
