@@ -1,6 +1,6 @@
 hs.hotkey.bind({"alt"}, "d", function() hs.reload() end)
 
-hs.hotkey.bind({"alt"}, "h", function() hs.hints.windowHints() end)
+hs.hotkey.bind({"alt","shift"}, "h", function() hs.hints.windowHints() end)
 hs.hints.style = "vimperator"
 
 function frame(fn)
@@ -176,10 +176,9 @@ function str(o)
 end
 
 function bigsmall(big, sml)
-  local verticalDell = findscreen('DELL U2412M')
-  print('vertical dell: '..(verticalDell and verticalDell:name() or '??'))
   return {
   [   "Google Chrome" ] = { screen = big, shape = { x=0.2, y=0, w=0.6, h=1 } },
+  [      "Superhuman" ] = { screen = big, shape = { x=0.2, y=0, w=0.6, h=1 } },
   [          "iTerm2" ] = { screen = verticalDell or big, shape = { x=0  , y=0, w=1  , h=1 } },
   [   "IntelliJ IDEA" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
   [            "Code" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
@@ -199,6 +198,7 @@ function laptopOnly(laptop)
   local  full = { x=0  , y=0, w=1  , h=1 }
   return {
     [   "Google Chrome" ] = { screen = laptop, shape = right },
+    [      "Superhuman" ] = { screen = laptop, shape = right },
     [          "iTerm2" ] = { screen = laptop, shape =  full },
     [   "IntelliJ IDEA" ] = { screen = laptop, shape = right },
     [            "Code" ] = { screen = laptop, shape = right },
@@ -226,32 +226,47 @@ end
 
 function screenstrs()
   local screens = hs.screen.allScreens()
-  return table.concat(map(screens, function(s) s:name() end), ',')
+  local names = map(screens, function(s) return s:name() end)
+  print("screens: "..str(names))
+  return table.concat(names, ',')
+end
+
+function msg(m)
+  print(m)
+  hs.alert(m)
 end
 
 function findscreen(...)
-  print('args: '..str(arg)..' '..str(...))
   if type(...) == 'string' then
     local screen = hs.screen.find(...)
     if screen ~= nil then
       return screen
     end
-  else
-    for _,name in ipairs(...) do
+  elseif type(...) == 'array' then
+    for s in ... do
       local screen = hs.screen.find(name)
       if screen ~= nil then
         return screen
       end
     end
+  else
+    for _, name in pairs(...) do
+      print('\tchecking name: '..name)
+      local screen = hs.screen.find(name:lower())
+      if screen ~= nil then
+        print('\t\tfound screen: '..name)
+        return screen
+      end
+    end
   end
-  hs.alert("Couldn't find screens: "..str(arg).." (available: "..screenstrs()..")")
+  msg("Couldn't find screens: "..str(...).." ("..type(...).."; available: "..screenstrs()..")")
 end
 
 hs.hotkey.bind(
     { 'cmd', 'ctrl' }, 'm',
     function()
-      local laptop = findscreen('Color LCD')
-      local     lg = findscreen('LG ULTRAWIDE') or findscreen('DELL U2715H')
+      local laptop = findscreen({'Color LCD', 'Built%-in Retina Display'})
+      local     lg = findscreen({'LG ULTRAWIDE', 'DELL U2715H'})
       if laptop == nil or lg == nil then
         hs.alert('missing a screen; laptop: '..(laptop and laptop:name() or '??')..', LG: '..(lg and lg:name() or '??'))
         return nil
@@ -264,9 +279,8 @@ hs.hotkey.bind(
 hs.hotkey.bind(
     { 'cmd', 'ctrl' }, 'l',
     function()
-      local laptop = findscreen('Color LCD')
+      local laptop = findscreen('Color LCD') or findscreen('Built-in Retina Display')
       if laptop == nil then return nil end
-
       layout(laptopOnly(laptop))
     end
 )
@@ -310,6 +324,7 @@ appShortcuts = {
   [                "Preview" ] = { modifiers =   'alt'         , key = 'v' },
   [                  "Slack" ] = { modifiers =   'alt'         , key = 'k' },
   [                 "Gitter" ] = { modifiers =   'alt'         , key = 'g' },
+  [             "Superhuman" ] = { modifiers =   'alt'         , key = 'h' },
   [                   "Mail" ] = { modifiers =   'alt'         , key = 'm' },
   [               "Calendar" ] = { modifiers =   'alt'         , key = 'r' },
   [                 "Signal" ] = { modifiers =   'alt'         , key = 'n' },
@@ -346,4 +361,4 @@ mapToArr(
     end
 )
 
-hs.alert.show("Config loaded")
+hs.alert.show("Config loaded: "..hs.screen.mainScreen():name())
