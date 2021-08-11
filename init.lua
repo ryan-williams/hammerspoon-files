@@ -190,6 +190,7 @@ function bigsmall(big, sml)
   [          "Safari" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
   [        "Calendar" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
   [          "Signal" ] = { screen = sml, shape = { x=0  , y=0, w=1  , h=1 } },
+  [        "WhatsApp" ] = { screen = sml, shape = { x=0  , y=0, w=1  , h=1 } },
 }
 end
 
@@ -210,6 +211,7 @@ function laptopOnly(laptop)
     [          "Safari" ] = { screen = laptop, shape = right },
     [        "Calendar" ] = { screen = laptop, shape = right },
     [          "Signal" ] = { screen = laptop, shape =  full },
+    [        "WhatsApp" ] = { screen = laptop, shape =  full },
   }
 end
 
@@ -331,6 +333,8 @@ appShortcuts = {
   [     "System Preferences" ] = { modifiers =   'alt'         , key = 's' },
   [             "VIP Access" ] = { modifiers =   'alt'         , key = 'j' },
   [                "zoom.us" ] = { modifiers =   'alt'         , key = 'z' },
+  [               "WhatsApp" ] = { modifiers =   'alt'         , key = 'w' },
+  [          "Final Cut Pro" ] = { modifiers =   'alt'         , key = 'p' },
 }
 
 -- Handle Finder specially; open a new window if none exist
