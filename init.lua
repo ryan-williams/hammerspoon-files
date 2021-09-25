@@ -327,7 +327,7 @@ appShortcuts = {
   [                  "Slack" ] = { modifiers =   'alt'         , key = 'k' },
   [                 "Gitter" ] = { modifiers =   'alt'         , key = 'g' },
   [             "Superhuman" ] = { modifiers =   'alt'         , key = 'h' },
-  [                   "Mail" ] = { modifiers =   'alt'         , key = 'm' },
+  [                 "Motion" ] = { modifiers =   'alt'         , key = 'm' },
   [               "Calendar" ] = { modifiers =   'alt'         , key = 'r' },
   [                 "Signal" ] = { modifiers =   'alt'         , key = 'n' },
   [     "System Preferences" ] = { modifiers =   'alt'         , key = 's' },
