@@ -268,7 +268,8 @@ hs.hotkey.bind(
     { 'cmd', 'ctrl' }, 'm',
     function()
       local laptop = findscreen({'Color LCD', 'Built%-in Retina Display'})
-      local     lg = findscreen({'LG ULTRAWIDE', 'DELL U2715H'})
+--       local     lg = findscreen({'LG ULTRAWIDE', 'DELL U2715H'})
+      local     lg = findscreen({'LG ULTRAWIDE', 'LG HDR WFHD'})
       if laptop == nil or lg == nil then
         hs.alert('missing a screen; laptop: '..(laptop and laptop:name() or '??')..', LG: '..(lg and lg:name() or '??'))
         return nil
