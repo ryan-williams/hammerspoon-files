@@ -1,3 +1,5 @@
+hs.application.enableSpotlightForNameSearches(true)
+
 hs.hotkey.bind({"alt"}, "d", function() hs.reload() end)
 
 hs.hotkey.bind({"alt","shift"}, "h", function() hs.hints.windowHints() end)
@@ -295,10 +297,6 @@ function focusApp(name)
     hs.application.open(name, 0, true)
     return
   end
-  if app == nil then
-    hs.alert("Couldn't find "..name)
-    return
-  end
   local focused = app:focusedWindow()
   if focused == nil then
     hs.alert("No focused window for "..name)
@@ -306,6 +304,7 @@ function focusApp(name)
     if #windows > 0 then
       windows[1]:focus()
     else
+        hs.alert("No windows found for "..name)
       return
     end
   else
