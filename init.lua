@@ -321,6 +321,7 @@ appShortcuts = {
   [                 "Safari" ] = { modifiers = { 'alt', 'cmd' }, key = 's' },
   [                  "iTerm" ] = { modifiers =   'alt'         , key = 't' },
   [ "com.jetbrains.intellij" ] = { modifiers =   'alt'         , key = 'i' },
+  [       "JetBrains Client" ] = { modifiers = { 'alt', 'shift' }, key = 'i' },
   [                   "Code" ] = { modifiers =   'alt'         , key = 'o' },
   [                  "Emacs" ] = { modifiers =   'alt'         , key = 'e' },
   [                "Preview" ] = { modifiers =   'alt'         , key = 'v' },
