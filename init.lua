@@ -329,7 +329,7 @@ appShortcuts = {
   [                  "Slack" ] = { modifiers =   'alt'           , key = 'k' },
   [                 "Gitter" ] = { modifiers =   'alt'           , key = 'g' },
   [             "Superhuman" ] = { modifiers =   'alt'           , key = 'h' },
-  [                 "Motion" ] = { modifiers =   'alt'           , key = 'm' },
+  ["Microsoft Teams classic" ] = { modifiers =   'alt'           , key = 'm' },
   [               "Calendar" ] = { modifiers =   'alt'           , key = 'r' },
   [                 "Signal" ] = { modifiers =   'alt'           , key = 'n' },
   [     "System Preferences" ] = { modifiers =   'alt'           , key = 's' },
