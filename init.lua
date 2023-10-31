@@ -39,6 +39,28 @@ for i = 1,9 do
           end
       )
   )
+  hs.hotkey.bind(
+      { "alt", "ctrl" }, tostring(i),
+      frame(
+          function(f, s)
+            f.x = s.x
+            f.w = s.w
+            f.y = s.y
+            f.h = s.h * i / 10
+          end
+      )
+  )
+  hs.hotkey.bind(
+      { "alt", "ctrl", "shift" }, tostring(i),
+      frame(
+          function(f, s)
+            f.x = s.x
+            f.w = s.w
+            f.y = s.y + s.h * (10 - i) / 10
+            f.h = s.h * i / 10
+          end
+      )
+  )
 end
 
 hs.hotkey.bind(
