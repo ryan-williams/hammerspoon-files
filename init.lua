@@ -352,7 +352,7 @@ appShortcuts = {
   [                 "Gitter" ] = { modifiers =   'alt'           , key = 'g' },
   [             "Superhuman" ] = { modifiers =   'alt'           , key = 'h' },
   ["Microsoft Teams classic" ] = { modifiers =   'alt'           , key = 'm' },
-  [               "Calendar" ] = { modifiers =   'alt'           , key = 'r' },
+  [                "RStudio" ] = { modifiers =   'alt'           , key = 'r' },
   [                 "Signal" ] = { modifiers =   'alt'           , key = 'n' },
   [     "System Preferences" ] = { modifiers =   'alt'           , key = 's' },
   [             "VIP Access" ] = { modifiers =   'alt'           , key = 'j' },
