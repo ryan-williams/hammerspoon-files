@@ -351,7 +351,7 @@ appShortcuts = {
   [                  "Slack" ] = { modifiers =   'alt'           , key = 'k' },
   [                 "Gitter" ] = { modifiers =   'alt'           , key = 'g' },
   [             "Superhuman" ] = { modifiers =   'alt'           , key = 'h' },
-  ["Microsoft Teams classic" ] = { modifiers =   'alt'           , key = 'm' },
+  ["Microsoft Teams (work or school)" ] = { modifiers =   'alt'           , key = 'm' },
   [                "RStudio" ] = { modifiers =   'alt'           , key = 'r' },
   [                 "Signal" ] = { modifiers =   'alt'           , key = 'n' },
   [     "System Preferences" ] = { modifiers =   'alt'           , key = 's' },
