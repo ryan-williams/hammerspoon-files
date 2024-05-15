@@ -342,6 +342,7 @@ appShortcuts = {
   [          "Google Chrome" ] = { modifiers = { 'alt', 'cmd'   }, key = 'c' },
   [                 "Safari" ] = { modifiers = { 'alt', 'cmd'   }, key = 's' },
   [                  "iTerm" ] = { modifiers =   'alt'           , key = 't' },
+  [               "Chat GPT" ] = { modifiers =   'alt'           , key = 'g' },
   [ "com.jetbrains.intellij" ] = { modifiers =   'alt'           , key = 'i' },
   [       "JetBrains Client" ] = { modifiers = { 'alt', 'shift' }, key = 'i' },
   [                  "CLion" ] = { modifiers =   'alt'           , key = 'l' },
