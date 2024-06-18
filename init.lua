@@ -339,6 +339,7 @@ function bindFocusApp(name, modifiers, hotkey)
 end
 
 appShortcuts = {
+  [       "Activity Monitor" ] = { modifiers = { 'alt', 'cmd'   }, key = 'a' },
   [          "Google Chrome" ] = { modifiers = { 'alt', 'cmd'   }, key = 'c' },
   [                 "Safari" ] = { modifiers = { 'alt', 'cmd'   }, key = 's' },
   [                  "iTerm" ] = { modifiers =   'alt'           , key = 't' },
