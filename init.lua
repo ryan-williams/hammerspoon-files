@@ -343,7 +343,7 @@ appShortcuts = {
   [                  "iTerm" ] = { modifiers =   'alt'           , key = 't' },
   [               "Chat GPT" ] = { modifiers =   'alt'           , key = 'g' },
   [ "com.jetbrains.intellij" ] = { modifiers =   'alt'           , key = 'i' },
-  [       "JetBrains Client" ] = { modifiers = { 'alt', 'shift' }, key = 'i' },
+  [          "IntelliJ IDEA" ] = { modifiers = { 'alt', 'shift' }, key = 'i' },
   [                  "CLion" ] = { modifiers =   'alt'           , key = 'l' },
   [                   "Code" ] = { modifiers =   'alt'           , key = 'o' },
   [                "Preview" ] = { modifiers =   'alt'           , key = 'v' },
