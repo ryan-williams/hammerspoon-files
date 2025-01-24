@@ -79,11 +79,11 @@ M = 10
 N = 10
 
 k = hs.hotkey.modal.new('alt', 'a')
-function k:entered() hs.alert'Resize mode' end
-function k:exited() hs.alert'Exited resize mode' end
+function k:entered() hs.alert 'Resize mode' end
+function k:exited() hs.alert 'Exited resize mode' end
 k:bind('alt', 'a', function() k:exit() end)
 k:bind('', 'escape', function() k:exit() end)
-k:bind('', 'J', 'Pressed J',function() print'let the record show that J was pressed' end)
+k:bind('', 'J', 'Pressed J',function() print 'let the record show that J was pressed' end)
 
 max = math.max
 min = math.min
