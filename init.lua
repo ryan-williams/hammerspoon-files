@@ -365,7 +365,7 @@ hs.hotkey.bind({ 'cmd', 'alt' }, 'f',
       local finder = hs.application.find('Finder')
       local window = finder:focusedWindow()
       if window == nil then
-        print'applescript…'
+        print 'applescript…'
         hs.applescript([[
 tell application "System Events"
   tell process "Finder"
