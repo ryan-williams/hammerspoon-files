@@ -352,6 +352,7 @@ appShortcuts = {
   [        "Microsoft Teams" ] = { modifiers =   'alt'           , key = 'm' },
   [                 "Signal" ] = { modifiers =   'alt'           , key = 'n' },
   [          "Final Cut Pro" ] = { modifiers =   'alt'           , key = 'p' },
+  [       "Quicktime Player" ] = { modifiers =   'alt'           , key = 'q' },
   [                "RStudio" ] = { modifiers =   'alt'           , key = 'r' },
   [     "System Preferences" ] = { modifiers =   'alt'           , key = 's' },
   [                "Preview" ] = { modifiers =   'alt'           , key = 'v' },
