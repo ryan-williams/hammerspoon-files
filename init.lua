@@ -343,8 +343,6 @@ appShortcuts = {
   [                  "iTerm" ] = { modifiers =   'alt'           , key = 't' },
   [               "Chat GPT" ] = { modifiers =   'alt'           , key = 'g' },
   [             "Superhuman" ] = { modifiers =   'alt'           , key = 'h' },
-  [ "com.jetbrains.intellij" ] = { modifiers =   'alt'           , key = 'i' },
-  [          "IntelliJ IDEA" ] = { modifiers = { 'alt', 'shift' }, key = 'i' },
   [             "VIP Access" ] = { modifiers =   'alt'           , key = 'j' },
   [                  "Slack" ] = { modifiers =   'alt'           , key = 'k' },
   [                  "CLion" ] = { modifiers =   'alt'           , key = 'l' },
@@ -387,5 +385,47 @@ mapToArr(
       bindFocusApp(name, key.modifiers, key.key)
     end
 )
+
+function listAllWindows()
+  local windows = hs.window.allWindows()
+  print("=== All Windows ===")
+  for i, win in ipairs(windows) do
+    local app = win:application()
+    local title = win:title() or "No Title"
+    local bundleID = app:bundleID() or "No Bundle ID"
+    local pid = app:pid()
+
+    print(string.format("%d. App: %s (PID: %d)", i, app:name(), pid))
+    print(string.format("   Bundle ID: %s", bundleID))
+    print(string.format("   Window: %s", title))
+    print(string.format("   Visible: %s", win:isVisible()))
+    print("---")
+  end
+end
+
+-- Bind to a hotkey for easy access
+hs.hotkey.bind({'alt'}, 'y', listAllWindows)
+
+function focusIntelliJ(isRemote)
+  local apps = hs.application.applicationsForBundleID("com.jetbrains.intellij")
+
+  for _, app in ipairs(apps) do
+    local windows = app:allWindows()
+    for _, win in ipairs(windows) do
+      local title = win:title() or ""
+      local hasHomePath = string.find(title, "/home/") ~= nil
+
+      if isRemote == hasHomePath then
+        win:focus()
+        return
+      end
+    end
+  end
+
+  hs.alert("IntelliJ " .. (isRemote and "Remote" or "Local") .. " not found")
+end
+
+hs.hotkey.bind({'alt'}, 'i', function() focusIntelliJ(false) end) -- Local
+hs.hotkey.bind({'alt', 'shift'}, 'i', function() focusIntelliJ(true) end) -- Remote
 
 hs.alert.show("Config loaded: "..hs.screen.mainScreen():name())
