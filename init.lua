@@ -78,9 +78,49 @@ hs.hotkey.bind(
 M = 10
 N = 10
 
+-- Create canvases for on-screen indicators (one per monitor)
+local resizeModeIndicators = {}
+
 k = hs.hotkey.modal.new('alt', 'a')
-function k:entered() hs.alert 'Resize mode' end
-function k:exited() hs.alert 'Exited resize mode' end
+function k:entered()
+  hs.alert 'Resize mode'
+
+  -- Show indicator on all screens
+  local allScreens = hs.screen.allScreens()
+  for i, screen in ipairs(allScreens) do
+    local screenFrame = screen:frame()
+    local indicator = hs.canvas.new({
+      x = screenFrame.x + screenFrame.w - 200,
+      y = screenFrame.y + 30,
+      w = 180,
+      h = 40
+    })
+    indicator:appendElements({
+      type = "rectangle",
+      fillColor = { red = 0.2, green = 0.2, blue = 0.2, alpha = 0.9 },
+      roundedRectRadii = { xRadius = 10, yRadius = 10 }
+    }, {
+      type = "text",
+      text = "🔧 WINDOW MGMT MODE",
+      textAlignment = "center",
+      textColor = { white = 1 },
+      textSize = 16,
+      frame = { x = 0, y = 10, w = 180, h = 20 }
+    })
+    indicator:show()
+    resizeModeIndicators[i] = indicator
+  end
+end
+
+function k:exited()
+  hs.alert 'Exited resize mode'
+
+  -- Hide all on-screen indicators
+  for _, indicator in ipairs(resizeModeIndicators) do
+    indicator:delete()
+  end
+  resizeModeIndicators = {}
+end
 k:bind('alt', 'a', function() k:exit() end)
 k:bind('', 'escape', function() k:exit() end)
 k:bind('', 'J', 'Pressed J',function() print 'let the record show that J was pressed' end)
