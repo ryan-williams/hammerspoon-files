@@ -431,6 +431,26 @@ function focusIntelliJ(isRemote)
   hs.alert("IntelliJ " .. (isRemote and "Remote" or "Local") .. " not found")
 end
 
+-- Debug function to inspect IntelliJ windows
+function debugIntelliJWindows()
+  local apps = hs.application.applicationsForBundleID("com.jetbrains.intellij")
+  print("=== IntelliJ Debug Info ===")
+
+  for _, app in ipairs(apps) do
+    local windows = app:allWindows()
+    print("App PID: " .. app:pid())
+    for i, win in ipairs(windows) do
+      local title = win:title() or "(no title)"
+      local hasHomePath = string.find(title, "/home/") ~= nil
+      print(string.format("  Window %d: '%s'", i, title))
+      print(string.format("    Has /home/: %s", hasHomePath))
+      print("    ---")
+    end
+  end
+end
+
+hs.hotkey.bind({'alt'}, 'u', debugIntelliJWindows) -- Debug hotkey
+
 hs.hotkey.bind({'alt'}, 'i', function() focusIntelliJ(false) end) -- Local
 hs.hotkey.bind({'alt', 'shift'}, 'i', function() focusIntelliJ(true) end) -- Remote
 
