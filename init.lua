@@ -241,6 +241,60 @@ k:bind('', 't', function()
   end
 end)
 
+-- Number keys for vertical height control in resize mode
+for i = 1, 9 do
+  -- Regular number keys: pin to top, adjust height
+  k:bind('', tostring(i), function()
+    local win = hs.window.focusedWindow()
+    if not win then return end
+    local screen = win:screen()
+    local screenFrame = screen:frame()
+    local f = win:frame()
+
+    f.y = screenFrame.y
+    f.h = screenFrame.h * i / 10
+    win:setFrame(f)
+  end)
+
+  -- Shift+number keys: pin to bottom, adjust height
+  k:bind('shift', tostring(i), function()
+    local win = hs.window.focusedWindow()
+    if not win then return end
+    local screen = win:screen()
+    local screenFrame = screen:frame()
+    local f = win:frame()
+
+    f.h = screenFrame.h * i / 10
+    f.y = screenFrame.y + screenFrame.h - f.h
+    win:setFrame(f)
+  end)
+end
+
+-- 0 key for full height
+k:bind('', '0', function()
+  local win = hs.window.focusedWindow()
+  if not win then return end
+  local screen = win:screen()
+  local screenFrame = screen:frame()
+  local f = win:frame()
+
+  f.y = screenFrame.y
+  f.h = screenFrame.h
+  win:setFrame(f)
+end)
+
+k:bind('shift', '0', function()
+  local win = hs.window.focusedWindow()
+  if not win then return end
+  local screen = win:screen()
+  local screenFrame = screen:frame()
+  local f = win:frame()
+
+  f.y = screenFrame.y
+  f.h = screenFrame.h
+  win:setFrame(f)
+end)
+
 function map(tbl, f)
   local t = {}
   for k,v in pairs(tbl) do
