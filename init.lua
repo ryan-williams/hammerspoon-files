@@ -203,7 +203,7 @@ function bigsmall(big, sml)
   return {
   [   "Google Chrome" ] = { screen = big, shape = { x=0.2, y=0, w=0.6, h=1 } },
   [      "Superhuman" ] = { screen = big, shape = { x=0.2, y=0, w=0.6, h=1 } },
-  [          "iTerm2" ] = { screen = verticalDell or big, shape = { x=0  , y=0, w=1  , h=1 } },
+  [          "iTerm2" ] = { screen = big, shape = { x=0  , y=0, w=1  , h=1 } },
   [   "IntelliJ IDEA" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
   [            "Code" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
   [           "Slack" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
@@ -238,14 +238,20 @@ function laptopOnly(laptop)
 end
 
 function layout(map)
-  hs.layout.apply(
-      mapToArr(
-          map,
-          function(k, v)
-            return { k, nil, v.screen, v.shape, nil, nil }
-          end
-      )
-  )
+  -- Filter out applications that aren't currently running
+  local layoutTable = {}
+  for appName, config in pairs(map) do
+    local app = hs.application.find(appName)
+    if app then
+      table.insert(layoutTable, { appName, nil, config.screen, config.shape, nil, nil })
+    end
+  end
+
+  if #layoutTable > 0 then
+    hs.layout.apply(layoutTable)
+  else
+    hs.alert("No applications to layout")
+  end
 end
 
 function screenstrs()
@@ -291,13 +297,13 @@ hs.hotkey.bind(
     function()
       local laptop = findscreen({'Color LCD', 'Built%-in Retina Display'})
 --       local     lg = findscreen({'LG ULTRAWIDE', 'DELL U2715H'})
-      local     lg = findscreen({'LG ULTRAWIDE', 'LG HDR WFHD'})
-      if laptop == nil or lg == nil then
-        hs.alert('missing a screen; laptop: '..(laptop and laptop:name() or '??')..', LG: '..(lg and lg:name() or '??'))
+      local external = findscreen({'LG ULTRAWIDE', 'LG HDR WFHD', 'DELL U3415W'})
+      if laptop == nil or external == nil then
+        hs.alert('missing a screen; laptop: '..(laptop and laptop:name() or '??')..', external: '..(external and external:name() or '??'))
         return nil
       end
 
-      layout(bigsmall(lg, laptop))
+      layout(bigsmall(external, laptop))
     end
 )
 
