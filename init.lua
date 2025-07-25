@@ -153,6 +153,54 @@ end
 resizeBindings({ 'h', 'left' }, { 'l', 'right' }, 'x', 'w', M)
 resizeBindings({ 'k',   'up' }, { 'j',  'down' }, 'y', 'h', N)
 
+-- Throw window to other screen
+k:bind('', 't', function()
+  local win = hs.window.focusedWindow()
+  if not win then
+    hs.alert("No focused window")
+    return
+  end
+
+  local currentScreen = win:screen()
+  local allScreens = hs.screen.allScreens()
+
+  -- Find the other screen
+  local targetScreen = nil
+  for _, screen in ipairs(allScreens) do
+    if screen ~= currentScreen then
+      targetScreen = screen
+      break
+    end
+  end
+
+  if not targetScreen then
+    hs.alert("No other screen found")
+    return
+  end
+
+  -- Determine if target is laptop or external monitor
+  local targetName = targetScreen:name():lower()
+  local isLaptop = targetName:find("color lcd") or targetName:find("built%-in retina display")
+
+  -- Move window to target screen
+  win:moveToScreen(targetScreen)
+
+  -- Apply appropriate sizing
+  local targetFrame = targetScreen:frame()
+  if isLaptop then
+    -- Full screen on laptop
+    win:setFrame(targetFrame)
+  else
+    -- Right half on external monitor
+    win:setFrame({
+      x = targetFrame.x + targetFrame.w * 0.5,
+      y = targetFrame.y,
+      w = targetFrame.w * 0.5,
+      h = targetFrame.h
+    })
+  end
+end)
+
 function map(tbl, f)
   local t = {}
   for k,v in pairs(tbl) do
