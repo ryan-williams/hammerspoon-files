@@ -193,7 +193,7 @@ end
 resizeBindings({ 'h', 'left' }, { 'l', 'right' }, 'x', 'w', M)
 resizeBindings({ 'k',   'up' }, { 'j',  'down' }, 'y', 'h', N)
 
--- Throw window to other screen
+-- Cycle window through available monitors
 k:bind('', 't', function()
   local win = hs.window.focusedWindow()
   if not win then
@@ -204,34 +204,39 @@ k:bind('', 't', function()
   local currentScreen = win:screen()
   local allScreens = hs.screen.allScreens()
 
-  -- Find the other screen
-  local targetScreen = nil
-  for _, screen in ipairs(allScreens) do
-    if screen ~= currentScreen then
-      targetScreen = screen
+  if #allScreens <= 1 then
+    hs.alert("Only one screen available")
+    return
+  end
+
+  -- Find current screen index
+  local currentIndex = nil
+  for i, screen in ipairs(allScreens) do
+    if screen == currentScreen then
+      currentIndex = i
       break
     end
   end
 
-  if not targetScreen then
-    hs.alert("No other screen found")
-    return
-  end
+  -- Calculate next screen index (cycle)
+  local nextIndex = currentIndex % #allScreens + 1
+  local targetScreen = allScreens[nextIndex]
 
-  -- Determine if target is laptop or external monitor
+  -- Determine screen type and appropriate sizing
   local targetName = targetScreen:name():lower()
   local isLaptop = targetName:find("color lcd") or targetName:find("built%-in retina display")
+  local isConferenceRoom = targetName:find("th%-65eq2") -- Conference room displays
 
   -- Move window to target screen
   win:moveToScreen(targetScreen)
 
   -- Apply appropriate sizing
   local targetFrame = targetScreen:frame()
-  if isLaptop then
-    -- Full screen on laptop
+  if isLaptop or isConferenceRoom then
+    -- Full screen on laptop and conference room displays
     win:setFrame(targetFrame)
   else
-    -- Right half on external monitor
+    -- Right half on other external monitors
     win:setFrame({
       x = targetFrame.x + targetFrame.w * 0.5,
       y = targetFrame.y,
@@ -343,17 +348,14 @@ end
 
 function bigsmall(big, sml)
   return {
-  [   "Google Chrome" ] = { screen = big, shape = { x=0.2, y=0, w=0.6, h=1 } },
-  [      "Superhuman" ] = { screen = big, shape = { x=0.2, y=0, w=0.6, h=1 } },
+  [   "Google Chrome" ] = { screen = big, shape = { x=0  , y=0, w=0.5, h=1 } },
   [          "iTerm2" ] = { screen = big, shape = { x=0  , y=0, w=1  , h=1 } },
-  [   "IntelliJ IDEA" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
-  [            "Code" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
-  [           "Slack" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
-  [ "Microsoft Teams" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
-  [          "Gitter" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
-  [            "Mail" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
-  [          "Safari" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
-  [        "Calendar" ] = { screen = big, shape = { x=0.4, y=0, w=0.6, h=1 } },
+  [   "IntelliJ IDEA" ] = { screen = big, shape = { x=0.5, y=0, w=0.5, h=1 } },
+  [            "Code" ] = { screen = big, shape = { x=0.5, y=0, w=0.5, h=1 } },
+  [           "Slack" ] = { screen = big, shape = { x=0.5, y=0, w=0.5, h=1 } },
+  [ "Microsoft Teams" ] = { screen = big, shape = { x=0.5, y=0, w=0.5, h=1 } },
+  [          "Safari" ] = { screen = big, shape = { x=0.5, y=0, w=0.5, h=1 } },
+  [        "Calendar" ] = { screen = big, shape = { x=0.5, y=0, w=0.5, h=1 } },
   [          "Signal" ] = { screen = sml, shape = { x=0  , y=0, w=1  , h=1 } },
   [        "WhatsApp" ] = { screen = sml, shape = { x=0  , y=0, w=1  , h=1 } },
 }
@@ -364,14 +366,11 @@ function laptopOnly(laptop)
   local  full = { x=0  , y=0, w=1  , h=1 }
   return {
     [   "Google Chrome" ] = { screen = laptop, shape = right },
-    [      "Superhuman" ] = { screen = laptop, shape = right },
     [          "iTerm2" ] = { screen = laptop, shape =  full },
     [   "IntelliJ IDEA" ] = { screen = laptop, shape = right },
     [            "Code" ] = { screen = laptop, shape = right },
     [           "Slack" ] = { screen = laptop, shape = right },
     [ "Microsoft Teams" ] = { screen = laptop, shape = right },
-    [          "Gitter" ] = { screen = laptop, shape = right },
-    [            "Mail" ] = { screen = laptop, shape = right },
     [          "Safari" ] = { screen = laptop, shape = right },
     [        "Calendar" ] = { screen = laptop, shape = right },
     [          "Signal" ] = { screen = laptop, shape =  full },
