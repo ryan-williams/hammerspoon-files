@@ -569,7 +569,13 @@ function focusIntelliJ(isRemote)
     end
   end
 
-  hs.alert("IntelliJ " .. (isRemote and "Remote" or "Local") .. " not found")
+  -- If no IntelliJ found, open it
+  if not isRemote then
+    hs.alert("Opening IntelliJ IDEA")
+    hs.application.open("IntelliJ IDEA", 0, true)
+  else
+    hs.alert("IntelliJ Remote not found")
+  end
 end
 
 -- Debug function to inspect IntelliJ windows
