@@ -193,7 +193,74 @@ end
 resizeBindings({ 'h', 'left' }, { 'l', 'right' }, 'x', 'w', M)
 resizeBindings({ 'k',   'up' }, { 'j',  'down' }, 'y', 'h', N)
 
--- Cycle window through available monitors
+-- Helper function to check if screen is laptop/small
+local function isSmallScreen(screen)
+  local name = screen:name():lower()
+  return name:find("color lcd") or name:find("built%-in retina display")
+end
+
+-- Helper function to determine default window sizing for a screen and app
+local function getDefaultSizing(screen, win)
+  local app = win:application()
+  if not app then return { x = 0, y = 0, w = 1, h = 1 } end
+
+  local appName = app:name()
+  local isSmall = isSmallScreen(screen)
+
+  -- Define app-specific sizing preferences
+  local appSizing = {
+    -- Apps that should always be fullscreen
+    ["iTerm2"] = { small = { x = 0, y = 0, w = 1, h = 1 }, big = { x = 0, y = 0, w = 1, h = 1 } },
+    ["Signal"] = { small = { x = 0, y = 0, w = 1, h = 1 }, big = { x = 0.5, y = 0, w = 0.5, h = 1 } },
+    ["WhatsApp"] = { small = { x = 0, y = 0, w = 1, h = 1 }, big = { x = 0.5, y = 0, w = 0.5, h = 1 } },
+
+    -- Apps that go half-screen on big monitors
+    ["Google Chrome"] = { small = { x = 0, y = 0, w = 1, h = 1 }, big = { x = 0, y = 0, w = 0.5, h = 1 } },
+    ["IntelliJ IDEA"] = { small = { x = 0.1, y = 0, w = 0.9, h = 1 }, big = { x = 0.5, y = 0, w = 0.5, h = 1 } },
+    ["Code"] = { small = { x = 0.1, y = 0, w = 0.9, h = 1 }, big = { x = 0.5, y = 0, w = 0.5, h = 1 } },
+    ["Slack"] = { small = { x = 0.1, y = 0, w = 0.9, h = 1 }, big = { x = 0.5, y = 0, w = 0.5, h = 1 } },
+    ["Microsoft Teams"] = { small = { x = 0.1, y = 0, w = 0.9, h = 1 }, big = { x = 0.5, y = 0, w = 0.5, h = 1 } },
+    ["Safari"] = { small = { x = 0.1, y = 0, w = 0.9, h = 1 }, big = { x = 0.5, y = 0, w = 0.5, h = 1 } },
+    ["Calendar"] = { small = { x = 0.1, y = 0, w = 0.9, h = 1 }, big = { x = 0.5, y = 0, w = 0.5, h = 1 } },
+  }
+
+  local sizing = appSizing[appName]
+  if sizing then
+    return isSmall and sizing.small or sizing.big
+  end
+
+  -- Default sizing for unknown apps
+  if isSmall then
+    return { x = 0.1, y = 0, w = 0.9, h = 1 }  -- Almost full on laptop
+  else
+    return { x = 0.5, y = 0, w = 0.5, h = 1 }  -- Right half on big screen
+  end
+end
+
+-- Show monitor information (bind to 'd' for "display" in window mode)
+k:bind('', 'd', function()
+  local screens = hs.screen.allScreens()
+  local info = "=== Monitor Information ===\n"
+  local namesOnly = {}
+  for i, screen in ipairs(screens) do
+    local name = screen:name()
+    local frame = screen:frame()
+    local isSmall = isSmallScreen(screen)
+    info = info .. string.format("%d. %s\n   Size: %dx%d\n   Type: %s\n",
+      i, name, frame.w, frame.h, isSmall and "Small/Laptop" or "Big/External")
+    table.insert(namesOnly, name)
+  end
+
+  -- Copy monitor names to clipboard
+  local namesList = table.concat(namesOnly, "\n")
+  hs.pasteboard.setContents(namesList)
+
+  hs.alert(info .. "\n📋 Names copied to clipboard!", 5)  -- Show for 5 seconds
+  print(info)  -- Also print to console
+  print("Copied to clipboard:\n" .. namesList)
+end)
+
+-- Throw window to other monitor with default sizing
 k:bind('', 't', function()
   local win = hs.window.focusedWindow()
   if not win then
@@ -222,28 +289,97 @@ k:bind('', 't', function()
   local nextIndex = currentIndex % #allScreens + 1
   local targetScreen = allScreens[nextIndex]
 
-  -- Determine screen type and appropriate sizing
-  local targetName = targetScreen:name():lower()
-  local isLaptop = targetName:find("color lcd") or targetName:find("built%-in retina display")
-  local isConferenceRoom = targetName:find("th%-65eq2") -- Conference room displays
+  -- Move window to target screen
+  win:moveToScreen(targetScreen)
+
+  -- Apply default sizing for this app and screen
+  local targetFrame = targetScreen:frame()
+  local sizing = getDefaultSizing(targetScreen, win)
+  win:setFrame({
+    x = targetFrame.x + targetFrame.w * sizing.x,
+    y = targetFrame.y + targetFrame.h * sizing.y,
+    w = targetFrame.w * sizing.w,
+    h = targetFrame.h * sizing.h
+  })
+end)
+
+-- Open Hammerspoon console (bind to 'c' for "console")
+k:bind('', 'c', function()
+  hs.toggleConsole()
+end)
+
+-- Apply laptop-only layout (bind to 'L' - uppercase)
+k:bind('shift', 'l', function()
+  local laptop = findscreen('Color LCD') or findscreen('Built-in Retina Display')
+  if laptop == nil then
+    hs.alert("Laptop screen not found")
+    return nil
+  end
+  layout(laptopOnly(laptop))
+end)
+
+-- Apply multi-monitor layout (same as cmd-ctrl-m)
+k:bind('', 'm', function()
+  local laptop = findscreen({'Color LCD', 'Built%-in Retina Display'})
+  -- Updated to catch more monitor variations
+  local external = findscreen({'LG', 'DELL U3415W', 'DELL U2715H', 'SB220Q'})
+
+  if laptop == nil or external == nil then
+    -- Show detailed debug info when screens aren't found
+    local screens = hs.screen.allScreens()
+    local screenList = ""
+    for _, s in ipairs(screens) do
+      screenList = screenList .. "\n  - " .. s:name()
+    end
+    hs.alert('Missing screen!\nLaptop: '..(laptop and laptop:name() or 'NOT FOUND')..
+            '\nExternal: '..(external and external:name() or 'NOT FOUND')..
+            '\n\nAvailable screens:' .. screenList, 5)
+    return nil
+  end
+
+  layout(bigsmall(external, laptop))
+end)
+
+-- Throw window to other monitor - left half
+k:bind('shift', 't', function()
+  local win = hs.window.focusedWindow()
+  if not win then
+    hs.alert("No focused window")
+    return
+  end
+
+  local currentScreen = win:screen()
+  local allScreens = hs.screen.allScreens()
+
+  if #allScreens <= 1 then
+    hs.alert("Only one screen available")
+    return
+  end
+
+  -- Find current screen index
+  local currentIndex = nil
+  for i, screen in ipairs(allScreens) do
+    if screen == currentScreen then
+      currentIndex = i
+      break
+    end
+  end
+
+  -- Calculate next screen index (cycle)
+  local nextIndex = currentIndex % #allScreens + 1
+  local targetScreen = allScreens[nextIndex]
 
   -- Move window to target screen
   win:moveToScreen(targetScreen)
 
-  -- Apply appropriate sizing
+  -- Apply left half sizing
   local targetFrame = targetScreen:frame()
-  if isLaptop or isConferenceRoom then
-    -- Full screen on laptop and conference room displays
-    win:setFrame(targetFrame)
-  else
-    -- Right half on other external monitors
-    win:setFrame({
-      x = targetFrame.x + targetFrame.w * 0.5,
-      y = targetFrame.y,
-      w = targetFrame.w * 0.5,
-      h = targetFrame.h
-    })
-  end
+  win:setFrame({
+    x = targetFrame.x,
+    y = targetFrame.y,
+    w = targetFrame.w * 0.5,
+    h = targetFrame.h
+  })
 end)
 
 -- Number keys for vertical height control in resize mode
@@ -437,10 +573,19 @@ hs.hotkey.bind(
     { 'cmd', 'ctrl' }, 'm',
     function()
       local laptop = findscreen({'Color LCD', 'Built%-in Retina Display'})
---       local     lg = findscreen({'LG ULTRAWIDE', 'DELL U2715H'})
-      local external = findscreen({'LG ULTRAWIDE', 'LG HDR WFHD', 'DELL U3415W'})
+      -- Updated to catch more monitor variations
+      local external = findscreen({'LG', 'DELL U3415W', 'DELL U2715H', 'SB220Q'})
+
       if laptop == nil or external == nil then
-        hs.alert('missing a screen; laptop: '..(laptop and laptop:name() or '??')..', external: '..(external and external:name() or '??'))
+        -- Show detailed debug info when screens aren't found
+        local screens = hs.screen.allScreens()
+        local screenList = ""
+        for _, s in ipairs(screens) do
+          screenList = screenList .. "\n  - " .. s:name()
+        end
+        hs.alert('Missing screen!\nLaptop: '..(laptop and laptop:name() or 'NOT FOUND')..
+                '\nExternal: '..(external and external:name() or 'NOT FOUND')..
+                '\n\nAvailable screens:' .. screenList, 5)
         return nil
       end
 
