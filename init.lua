@@ -307,8 +307,8 @@ k:bind('', 'c', function()
   hs.toggleConsole()
 end)
 
--- Apply laptop-only layout (bind to 'L' - uppercase)
-k:bind('shift', 'l', function()
+-- Apply laptop-only layout (bind to 'o' for "only laptop")
+k:bind('', 'o', function()
   local laptop = findscreen('Color LCD') or findscreen('Built-in Retina Display')
   if laptop == nil then
     hs.alert("Laptop screen not found")
@@ -591,7 +591,7 @@ hs.hotkey.bind(
 )
 
 hs.hotkey.bind(
-    { 'cmd', 'ctrl' }, 'l',
+    { 'cmd', 'ctrl' }, 'o',
     function()
       local laptop = findscreen('Color LCD') or findscreen('Built-in Retina Display')
       if laptop == nil then return nil end
