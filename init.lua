@@ -489,7 +489,6 @@ function bigsmall(big, sml)
   [            "Code" ] = { screen = big, shape = { x=0.5, y=0, w=0.5, h=1 } },
   [           "Slack" ] = { screen = big, shape = { x=0.5, y=0, w=0.5, h=1 } },
   [          "Safari" ] = { screen = big, shape = { x=0.5, y=0, w=0.5, h=1 } },
-  [        "Calendar" ] = { screen = big, shape = { x=0.5, y=0, w=0.5, h=1 } },
   [          "Signal" ] = { screen = sml, shape = { x=0  , y=0, w=1  , h=1 } },
   [        "WhatsApp" ] = { screen = sml, shape = { x=0  , y=0, w=1  , h=1 } },
 }
@@ -505,7 +504,6 @@ function laptopOnly(laptop)
     [            "Code" ] = { screen = laptop, shape = right },
     [           "Slack" ] = { screen = laptop, shape = right },
     [          "Safari" ] = { screen = laptop, shape = right },
-    [        "Calendar" ] = { screen = laptop, shape = right },
     [          "Signal" ] = { screen = laptop, shape =  full },
     [        "WhatsApp" ] = { screen = laptop, shape =  full },
   }
@@ -630,9 +628,7 @@ appShortcuts = {
   [          "Google Chrome" ] = { modifiers = { 'alt', 'cmd'   }, key = 'c' },
   [                 "Safari" ] = { modifiers = { 'alt', 'cmd'   }, key = 's' },
   [                  "iTerm" ] = { modifiers =   'alt'           , key = 't' },
-  [             "Superhuman" ] = { modifiers =   'alt'           , key = 'h' },
   [                  "Slack" ] = { modifiers =   'alt'           , key = 'k' },
-  [                 "Cursor" ] = { modifiers =   'alt'           , key = 'o' },
   [                 "Signal" ] = { modifiers =   'alt'           , key = 'n' },
   [              "1Password" ] = { modifiers =   'alt'           , key = 'p' },
   [       "Quicktime Player" ] = { modifiers =   'alt'           , key = 'q' },
