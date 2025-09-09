@@ -19,17 +19,21 @@ function frame(fn)
 end
 
 for i = 1,9 do
-  hs.hotkey.bind(
-      { "alt" }, tostring(i),
-      frame(
-          function(f, s)
-            f.x = s.x + s.w * (10 - i) / 10
-            f.w = s.w * i / 10
-            f.y = s.y
-            f.h = s.h
-          end
-      )
-  )
+  -- Skip alt-1 (reserved for 1Password), but keep other alt-1 combinations
+  if i ~= 1 then
+    hs.hotkey.bind(
+        { "alt" }, tostring(i),
+        frame(
+            function(f, s)
+              f.x = s.x + s.w * (10 - i) / 10
+              f.w = s.w * i / 10
+              f.y = s.y
+              f.h = s.h
+            end
+        )
+    )
+  end
+
   hs.hotkey.bind(
       { "alt", "shift" }, tostring(i),
       frame(
@@ -632,7 +636,8 @@ appShortcuts = {
   [                  "iTerm" ] = { modifiers =   'alt'           , key = 't' },
   [                  "Slack" ] = { modifiers =   'alt'           , key = 'k' },
   [                 "Signal" ] = { modifiers =   'alt'           , key = 'n' },
-  [              "1Password" ] = { modifiers =   'alt'           , key = 'p' },
+  [              "1Password" ] = { modifiers =   'alt'           , key = '1' },
+  [          "Final Cut Pro" ] = { modifiers =   'alt'           , key = 'p' },
   [       "Quicktime Player" ] = { modifiers =   'alt'           , key = 'q' },
   [     "System Preferences" ] = { modifiers =   'alt'           , key = 's' },
   [                "Preview" ] = { modifiers =   'alt'           , key = 'v' },
