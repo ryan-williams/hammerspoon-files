@@ -3,6 +3,8 @@ hs.application.enableSpotlightForNameSearches(true)
 hs.hotkey.bind({"alt"}, "d", function() hs.reload() end)
 
 hs.hotkey.bind({"alt","shift"}, "h", function() hs.hints.windowHints() end)
+
+hs.hotkey.bind({"alt","cmd"}, "h", function() hs.toggleConsole() end)
 hs.hints.style = "vimperator"
 
 function frame(fn)
