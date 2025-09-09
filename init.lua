@@ -414,6 +414,32 @@ for i = 1, 9 do
     f.y = screenFrame.y + screenFrame.h - f.h
     win:setFrame(f)
   end)
+
+  -- Ctrl+number keys: pin to left, adjust width
+  k:bind('ctrl', tostring(i), function()
+    local win = hs.window.focusedWindow()
+    if not win then return end
+    local screen = win:screen()
+    local screenFrame = screen:frame()
+    local f = win:frame()
+
+    f.x = screenFrame.x
+    f.w = screenFrame.w * i / 10
+    win:setFrame(f)
+  end)
+
+  -- Ctrl+Shift+number keys: pin to right, adjust width
+  k:bind({'ctrl', 'shift'}, tostring(i), function()
+    local win = hs.window.focusedWindow()
+    if not win then return end
+    local screen = win:screen()
+    local screenFrame = screen:frame()
+    local f = win:frame()
+
+    f.w = screenFrame.w * i / 10
+    f.x = screenFrame.x + screenFrame.w - f.w
+    win:setFrame(f)
+  end)
 end
 
 -- 0 key for full height
@@ -438,6 +464,31 @@ k:bind('shift', '0', function()
 
   f.y = screenFrame.y
   f.h = screenFrame.h
+  win:setFrame(f)
+end)
+
+-- Ctrl+0 for full width
+k:bind('ctrl', '0', function()
+  local win = hs.window.focusedWindow()
+  if not win then return end
+  local screen = win:screen()
+  local screenFrame = screen:frame()
+  local f = win:frame()
+
+  f.x = screenFrame.x
+  f.w = screenFrame.w
+  win:setFrame(f)
+end)
+
+k:bind({'ctrl', 'shift'}, '0', function()
+  local win = hs.window.focusedWindow()
+  if not win then return end
+  local screen = win:screen()
+  local screenFrame = screen:frame()
+  local f = win:frame()
+
+  f.x = screenFrame.x
+  f.w = screenFrame.w
   win:setFrame(f)
 end)
 
