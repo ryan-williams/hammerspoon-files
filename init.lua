@@ -692,20 +692,22 @@ function bindFocusApp(name, modifiers, hotkey)
   hs.hotkey.bind(modifiers, hotkey, function() focusApp(name) end)
 end
 
+-- App shortcuts table: defines global hotkeys and WM mode shortcuts
+-- wmKey: single char in WM mode (or {modifiers, key} for modified keys)
 appShortcuts = {
   [       "Activity Monitor" ] = { modifiers = { 'alt', 'cmd'   }, key = 'a' },
   [          "Google Chrome" ] = { modifiers = { 'alt', 'cmd'   }, key = 'c' },
   [                 "Safari" ] = { modifiers = { 'alt', 'cmd'   }, key = 's' },
-  [                  "iTerm" ] = { modifiers =   'alt'           , key = 't' },
-  [                  "Slack" ] = { modifiers =   'alt'           , key = 'k' },
-  [                 "Signal" ] = { modifiers =   'alt'           , key = 'n' },
   [              "1Password" ] = { modifiers =   'alt'           , key = '1' },
-  [          "Final Cut Pro" ] = { modifiers =   'alt'           , key = 'p' },
-  [       "Quicktime Player" ] = { modifiers =   'alt'           , key = 'q' },
-  [     "System Preferences" ] = { modifiers =   'alt'           , key = 's' },
-  [                "Preview" ] = { modifiers =   'alt'           , key = 'v' },
-  [               "WhatsApp" ] = { modifiers =   'alt'           , key = 'w' },
-  [                "zoom.us" ] = { modifiers =   'alt'           , key = 'z' },
+  [                  "iTerm" ] = { modifiers =   'alt'           , key = 't', wmKey = 'i' },  -- 'i' in WM mode (t conflicts with throw)
+  [                  "Slack" ] = { modifiers =   'alt'           , key = 'k', wmKey = {'shift', 'k'} },  -- shift-k in WM (k conflicts with resize)
+  [                 "Signal" ] = { modifiers =   'alt'           , key = 'n', wmKey = 'n' },
+  [          "Final Cut Pro" ] = { modifiers =   'alt'           , key = 'p', wmKey = 'p' },
+  [       "Quicktime Player" ] = { modifiers =   'alt'           , key = 'q', wmKey = 'q' },
+  [     "System Preferences" ] = { modifiers =   'alt'           , key = 's', wmKey = 's' },
+  [                "Preview" ] = { modifiers =   'alt'           , key = 'v', wmKey = 'v' },
+  [               "WhatsApp" ] = { modifiers =   'alt'           , key = 'w', wmKey = 'w' },
+  [                "zoom.us" ] = { modifiers =   'alt'           , key = 'z', wmKey = 'z' },
 }
 
 -- Handle Finder specially; open a new window if none exist
@@ -729,10 +731,32 @@ end tell
     end
 )
 
+-- Bind global app shortcuts and WM mode shortcuts from the table
 mapToArr(
     appShortcuts,
-    function(name, key)
-      bindFocusApp(name, key.modifiers, key.key)
+    function(name, shortcut)
+      -- Bind global hotkey
+      bindFocusApp(name, shortcut.modifiers, shortcut.key)
+
+      -- Bind WM mode hotkey if specified
+      if shortcut.wmKey then
+        if type(shortcut.wmKey) == 'string' then
+          -- Simple single key
+          k:bind('', shortcut.wmKey, function() focusApp(name) end)
+        elseif type(shortcut.wmKey) == 'table' then
+          -- Modified key (e.g., {'shift', 'k'})
+          local mods = {}
+          local key = nil
+          for i, v in ipairs(shortcut.wmKey) do
+            if i == #shortcut.wmKey then
+              key = v
+            else
+              table.insert(mods, v)
+            end
+          end
+          k:bind(mods, key, function() focusApp(name) end)
+        end
+      end
     end
 )
 
