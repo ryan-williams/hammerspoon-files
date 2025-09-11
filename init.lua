@@ -657,22 +657,34 @@ hs.hotkey.bind(
 function focusApp(name)
   local app = hs.application.find(name)
   if app == nil then
+    -- App not running, open it
     hs.alert('Opening '..name)
     hs.application.open(name, 0, true)
     return
   end
-  local focused = app:focusedWindow()
-  if focused == nil then
-    hs.alert("No focused window for "..name)
-    local windows = app:allWindows()
-    if #windows > 0 then
-      windows[1]:focus()
-    else
-        hs.alert("No windows found for "..name)
-      return
-    end
+
+  -- Try to get a window to focus
+  local windows = app:allWindows()
+  if #windows > 0 then
+    -- Has windows, focus the first one
+    windows[1]:focus()
+    return
+  end
+
+  -- App is running but has no windows
+  -- For 1Password and similar apps, just re-open them
+  if name == "1Password" then
+    -- 1Password is a menu bar app, re-opening it should show the window
+    hs.application.open(name)
   else
-    focused:focus()
+    -- For other apps, try activate first
+    app:activate()
+    -- If still no windows after a brief delay, try opening
+    hs.timer.doAfter(0.5, function()
+      if #app:allWindows() == 0 then
+        hs.application.open(name)
+      end
+    end)
   end
 end
 
