@@ -1,6 +1,6 @@
 hs.application.enableSpotlightForNameSearches(true)
 
-hs.hotkey.bind({"alt"}, "d", function() hs.reload() end)
+hs.hotkey.bind({"alt"}, "r", function() hs.reload() end)
 
 hs.hotkey.bind({"alt","shift"}, "h", function() hs.hints.windowHints() end)
 
@@ -708,6 +708,7 @@ appShortcuts = {
   [                "Preview" ] = { modifiers =   'alt'           , key = 'v', wmKey = 'v' },
   [               "WhatsApp" ] = { modifiers =   'alt'           , key = 'w', wmKey = 'w' },
   [                "zoom.us" ] = { modifiers =   'alt'           , key = 'z', wmKey = 'z' },
+  [                "Discord" ] = { modifiers =   'alt'           , key = 'd', wmKey = 'd' },
 }
 
 -- Handle Finder specially; open a new window if none exist
