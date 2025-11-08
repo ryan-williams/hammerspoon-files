@@ -709,6 +709,7 @@ appShortcuts = {
   [               "WhatsApp" ] = { modifiers =   'alt'           , key = 'w', wmKey = 'w' },
   [                "zoom.us" ] = { modifiers =   'alt'           , key = 'z', wmKey = 'z' },
   [                "Discord" ] = { modifiers =   'alt'           , key = 'd', wmKey = 'd' },
+  [         "Docker Desktop" ] = { modifiers = { 'alt', 'shift' }, key = 'd', wmKey = {'shift', 'd'} },
 }
 
 -- Handle Finder specially; open a new window if none exist
