@@ -697,19 +697,20 @@ end
 appShortcuts = {
   [       "Activity Monitor" ] = { modifiers = { 'alt', 'cmd'   }, key = 'a' },
   [          "Google Chrome" ] = { modifiers = { 'alt', 'cmd'   }, key = 'c' },
-  [                 "Safari" ] = { modifiers = { 'alt', 'cmd'   }, key = 's' },
+  [                "Discord" ] = { modifiers =   'alt'           , key = 'd', wmKey = 'd' },
+  [         "Docker Desktop" ] = { modifiers = { 'alt', 'shift' }, key = 'd', wmKey = {'shift', 'd'} },
   [              "1Password" ] = { modifiers =   'alt'           , key = '1' },
-  [                  "iTerm" ] = { modifiers =   'alt'           , key = 't', wmKey = 'i' },  -- 'i' in WM mode (t conflicts with throw)
+  [                "Granola" ] = { modifiers =   'alt'           , key = 'g', wmKey = 'g' },
   [                  "Slack" ] = { modifiers =   'alt'           , key = 'k', wmKey = {'shift', 'k'} },  -- shift-k in WM (k conflicts with resize)
   [                 "Signal" ] = { modifiers =   'alt'           , key = 'n', wmKey = 'n' },
   [          "Final Cut Pro" ] = { modifiers =   'alt'           , key = 'p', wmKey = 'p' },
   [       "Quicktime Player" ] = { modifiers =   'alt'           , key = 'q', wmKey = 'q' },
   [     "System Preferences" ] = { modifiers =   'alt'           , key = 's', wmKey = 's' },
+  [                 "Safari" ] = { modifiers = { 'alt', 'cmd'   }, key = 's' },
+  [                  "iTerm" ] = { modifiers =   'alt'           , key = 't', wmKey = 'i' },  -- 'i' in WM mode (t conflicts with throw)
   [                "Preview" ] = { modifiers =   'alt'           , key = 'v', wmKey = 'v' },
   [               "WhatsApp" ] = { modifiers =   'alt'           , key = 'w', wmKey = 'w' },
   [                "zoom.us" ] = { modifiers =   'alt'           , key = 'z', wmKey = 'z' },
-  [                "Discord" ] = { modifiers =   'alt'           , key = 'd', wmKey = 'd' },
-  [         "Docker Desktop" ] = { modifiers = { 'alt', 'shift' }, key = 'd', wmKey = {'shift', 'd'} },
 }
 
 -- Handle Finder specially; open a new window if none exist
@@ -829,5 +830,15 @@ hs.hotkey.bind({'alt'}, 'u', debugIntelliJWindows) -- Debug hotkey
 
 hs.hotkey.bind({'alt'}, 'i', function() focusIntelliJ(false) end) -- Local
 hs.hotkey.bind({'alt', 'shift'}, 'i', function() focusIntelliJ(true) end) -- Remote
+
+-- iTerm pane management mode
+-- Add iterm module path and load it
+package.path = package.path .. ";" .. os.getenv("HOME") .. "/.rc/iterm/hammerspoon/?.lua"
+local itermOk, itermMode = pcall(require, "iterm")
+if itermOk then
+  itermMode.setup(k)  -- Pass window mgmt mode to enable T binding within it
+else
+  print("iTerm mode not loaded: " .. tostring(itermMode))
+end
 
 hs.alert.show("Config loaded: "..hs.screen.mainScreen():name())
