@@ -25,10 +25,8 @@ for i = 1,9 do
         { "alt" }, tostring(i),
         frame(
             function(f, s)
-              f.x = s.x + s.w * (10 - i) / 10
               f.w = s.w * i / 10
-              f.y = s.y
-              f.h = s.h
+              f.x = min(f.x, s.x + s.w - f.w)
             end
         )
     )
@@ -49,10 +47,8 @@ for i = 1,9 do
       { "alt", "ctrl" }, tostring(i),
       frame(
           function(f, s)
-            f.x = s.x
-            f.w = s.w
-            f.y = s.y
             f.h = s.h * i / 10
+            f.y = min(f.y, s.y + s.h - f.h)
           end
       )
   )
@@ -62,7 +58,7 @@ for i = 1,9 do
           function(f, s)
             f.x = s.x
             f.w = s.w
-            f.y = s.y + s.h * (10 - i) / 10
+            f.y = s.y
             f.h = s.h * i / 10
           end
       )
@@ -173,17 +169,15 @@ function resizeBindings(base, far, k, sk, S)
   function nudgeFar(f, s) f[k] = min(s[sk] - f[sk] + s[k], f[k] + s[sk] / S) end
   function flushFar(f, s) f[k] = s[sk] - f[sk] + s[k] end
 
-  -- For the "base" (left or top) edge:
-  -- - default: extend
-  -- - shift: contract
-  -- - ctrl: extend to edge
+  -- Direction-centric: arrow = direction of movement, shift = other edge
+  -- base direction (left/up): default extends base edge, shift shrinks far edge
   bind('', base, extendBase)
-  bind('shift', base, shrinkBase)
+  bind('shift', base, shrinkFar)
   bind('ctrl', base, throwBase)
 
-  -- Same three bindings, but for the "far" edge (right or bottom)
+  -- far direction (right/down): default extends far edge, shift shrinks base edge
   bind('', far, extendFar)
-  bind('shift', far, shrinkFar)
+  bind('shift', far, shrinkBase)
   bind('ctrl', far, throwFar)
 
   -- cmd: "nudge" in the "base" direction
@@ -387,108 +381,97 @@ k:bind('shift', 't', function()
   })
 end)
 
--- Number keys for vertical height control in resize mode
+-- Number keys in WM mode: width/height sizing
 for i = 1, 9 do
-  -- Regular number keys: pin to top, adjust height
+  -- \d: set width i/10, keep position (clamp right edge)
   k:bind('', tostring(i), function()
     local win = hs.window.focusedWindow()
     if not win then return end
-    local screen = win:screen()
-    local screenFrame = screen:frame()
+    local s = win:screen():frame()
     local f = win:frame()
-
-    f.y = screenFrame.y
-    f.h = screenFrame.h * i / 10
+    f.w = s.w * i / 10
+    f.x = min(f.x, s.x + s.w - f.w)
     win:setFrame(f)
   end)
 
-  -- Shift+number keys: pin to bottom, adjust height
+  -- shift-\d: full height, left-aligned, width = i/10 (like alt-shift-\d)
   k:bind('shift', tostring(i), function()
     local win = hs.window.focusedWindow()
     if not win then return end
-    local screen = win:screen()
-    local screenFrame = screen:frame()
+    local s = win:screen():frame()
     local f = win:frame()
-
-    f.h = screenFrame.h * i / 10
-    f.y = screenFrame.y + screenFrame.h - f.h
+    f.x = s.x
+    f.w = s.w * i / 10
+    f.y = s.y
+    f.h = s.h
     win:setFrame(f)
   end)
 
-  -- Ctrl+number keys: pin to left, adjust width
+  -- ctrl-\d: set height i/10, keep position (clamp bottom edge)
   k:bind('ctrl', tostring(i), function()
     local win = hs.window.focusedWindow()
     if not win then return end
-    local screen = win:screen()
-    local screenFrame = screen:frame()
+    local s = win:screen():frame()
     local f = win:frame()
-
-    f.x = screenFrame.x
-    f.w = screenFrame.w * i / 10
+    f.h = s.h * i / 10
+    f.y = min(f.y, s.y + s.h - f.h)
     win:setFrame(f)
   end)
 
-  -- Ctrl+Shift+number keys: pin to right, adjust width
+  -- ctrl-shift-\d: pin to top, height = i/10, keep width
   k:bind({'ctrl', 'shift'}, tostring(i), function()
     local win = hs.window.focusedWindow()
     if not win then return end
-    local screen = win:screen()
-    local screenFrame = screen:frame()
+    local s = win:screen():frame()
     local f = win:frame()
-
-    f.w = screenFrame.w * i / 10
-    f.x = screenFrame.x + screenFrame.w - f.w
+    f.y = s.y
+    f.h = s.h * i / 10
     win:setFrame(f)
   end)
 end
 
--- 0 key for full height
+-- 0: full screen (width)
 k:bind('', '0', function()
   local win = hs.window.focusedWindow()
   if not win then return end
-  local screen = win:screen()
-  local screenFrame = screen:frame()
+  local s = win:screen():frame()
   local f = win:frame()
-
-  f.y = screenFrame.y
-  f.h = screenFrame.h
+  f.x = s.x
+  f.w = s.w
+  f.y = s.y
+  f.h = s.h
   win:setFrame(f)
 end)
 
+-- shift-0: full width, keep height/y
 k:bind('shift', '0', function()
   local win = hs.window.focusedWindow()
   if not win then return end
-  local screen = win:screen()
-  local screenFrame = screen:frame()
+  local s = win:screen():frame()
   local f = win:frame()
-
-  f.y = screenFrame.y
-  f.h = screenFrame.h
+  f.x = s.x
+  f.w = s.w
   win:setFrame(f)
 end)
 
--- Ctrl+0 for full width
+-- ctrl-0 / ctrl-shift-0: full height, keep width/x
 k:bind('ctrl', '0', function()
   local win = hs.window.focusedWindow()
   if not win then return end
-  local screen = win:screen()
-  local screenFrame = screen:frame()
+  local s = win:screen():frame()
   local f = win:frame()
-
-  f.x = screenFrame.x
-  f.w = screenFrame.w
+  f.y = s.y
+  f.h = s.h
   win:setFrame(f)
 end)
 
 k:bind({'ctrl', 'shift'}, '0', function()
   local win = hs.window.focusedWindow()
   if not win then return end
-  local screen = win:screen()
-  local screenFrame = screen:frame()
+  local s = win:screen():frame()
   local f = win:frame()
-
-  f.x = screenFrame.x
-  f.w = screenFrame.w
+  f.y = s.y
+  f.h = s.h
   win:setFrame(f)
 end)
 
