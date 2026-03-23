@@ -25,8 +25,10 @@ for i = 1,9 do
         { "alt" }, tostring(i),
         frame(
             function(f, s)
+              f.x = s.x + s.w * (10 - i) / 10
               f.w = s.w * i / 10
-              f.x = min(f.x, s.x + s.w - f.w)
+              f.y = s.y
+              f.h = s.h
             end
         )
     )
