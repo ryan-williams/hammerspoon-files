@@ -4,7 +4,14 @@ hs.hotkey.bind({"alt"}, "r", function() hs.reload() end)
 
 hs.hotkey.bind({"alt","shift"}, "h", function() hs.hints.windowHints() end)
 
-hs.hotkey.bind({"alt","cmd"}, "h", function() hs.toggleConsole() end)
+hs.hotkey.bind({"alt","cmd"}, "h", function()
+  local console = hs.console.hswindow()
+  if console and console:isVisible() then
+    console:close()
+  else
+    hs.openConsole()
+  end
+end)
 hs.hints.style = "vimperator"
 
 function frame(fn)
@@ -825,6 +832,16 @@ if itermOk then
   itermMode.setup(k)  -- Pass window mgmt mode to enable T binding within it
 else
   print("iTerm mode not loaded: " .. tostring(itermMode))
+end
+
+-- Unicode text expander
+package.path = package.path .. ";" .. os.getenv("HOME") .. "/.rc/hammerspoon/?.lua"
+local unicodeOk, unicode = pcall(require, "unicode")
+if unicodeOk then
+  unicode.setup()
+  hs.hotkey.bind({"ctrl", "shift"}, "u", function() unicode.toggle_debug() end)
+else
+  print("Unicode module failed: " .. tostring(unicode))
 end
 
 hs.alert.show("Config loaded: "..hs.screen.mainScreen():name())
