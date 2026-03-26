@@ -87,14 +87,20 @@ function M.setup()
     local buffer = ""
     local pendingTimer = nil
 
-    local function doReplace(trigger, replacement)
+    local function doReplace(trigger, replacement, deleteCount)
         buffer = ""
-        -- Delete the trigger characters
-        for i = 1, #trigger do
+        -- Delete the trigger characters already in the text
+        for i = 1, deleteCount do
             hs.eventtap.keyStroke({}, "delete", 0)
         end
-        -- Type the replacement
-        hs.eventtap.keyStrokes(replacement)
+        -- Paste replacement via clipboard (more reliable than keyStrokes for unicode)
+        local prev = hs.pasteboard.getContents()
+        hs.pasteboard.setContents(replacement)
+        hs.eventtap.keyStroke({"cmd"}, "v", 0)
+        -- Restore clipboard after a brief delay
+        if prev then
+            hs.timer.doAfter(0.1, function() hs.pasteboard.setContents(prev) end)
+        end
     end
 
     local watcher = hs.eventtap.new({hs.eventtap.event.types.keyDown}, function(event)
@@ -124,11 +130,18 @@ function M.setup()
         end
 
         -- Cancel any pending replacement
-        if pendingTimer then pendingTimer:stop(); pendingTimer = nil end
+        local hadPending = nil
+        if pendingTimer then
+            hadPending = {trigger = pendingTimer._trigger, replacement = pendingTimer._replacement}
+            pendingTimer:stop()
+            pendingTimer = nil
+        end
 
         -- Check if buffer ends with any trigger
+        local matched = false
         for trigger, replacement in pairs(shortcuts) do
             if buffer:sub(-#trigger) == trigger then
+                matched = true
                 if prefixes[trigger] then
                     -- This trigger is a prefix of a longer one; wait briefly
                     local t = trigger
@@ -137,19 +150,32 @@ function M.setup()
                         if M.debug then
                             print("[unicode] firing delayed: " .. t .. " -> " .. r)
                         end
-                        doReplace(t, r)
+                        doReplace(t, r, #t)
                         pendingTimer = nil
                     end)
+                    pendingTimer._trigger = t
+                    pendingTimer._replacement = r
                     return false
                 else
                     -- No ambiguity, fire immediately
+                    -- Current keystroke not yet inserted (suppressed by return true),
+                    -- so only delete #trigger - 1
                     if M.debug then
                         print("[unicode] firing: " .. trigger .. " -> " .. replacement)
                     end
-                    doReplace(trigger, replacement)
+                    doReplace(trigger, replacement, #trigger - 1)
                     return true
                 end
             end
+        end
+
+        -- If we cancelled a pending trigger and nothing new matched, fire it now
+        -- All pending trigger chars are in the text, current char not yet inserted
+        if hadPending and not matched then
+            if M.debug then
+                print("[unicode] firing cancelled pending: " .. hadPending.trigger .. " -> " .. hadPending.replacement)
+            end
+            doReplace(hadPending.trigger, hadPending.replacement, #hadPending.trigger)
         end
 
         return false
