@@ -727,6 +727,14 @@ end tell
     end
 )
 
+-- Open Finder at a specific path
+local function openFinderAt(path)
+  hs.execute('open ' .. path)
+end
+
+hs.hotkey.bind({ 'alt', 'shift' }, 'f', function() openFinderAt('~/Downloads') end)
+hs.hotkey.bind({ 'alt', 'cmd', 'shift' }, 'f', function() openFinderAt('~/Screenshots') end)
+
 -- Bind global app shortcuts and WM mode shortcuts from the table
 mapToArr(
     appShortcuts,
