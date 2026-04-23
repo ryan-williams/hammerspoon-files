@@ -90,17 +90,20 @@ function M.setup()
     local function doReplace(trigger, replacement, deleteCount)
         buffer = ""
         -- Delete the trigger characters already in the text
+        -- Use ~10ms keyDown/keyUp gap so apps (e.g. WhatsApp) process in order
         for i = 1, deleteCount do
-            hs.eventtap.keyStroke({}, "delete", 0)
+            hs.eventtap.keyStroke({}, "delete", 10000)
         end
         -- Paste replacement via clipboard (more reliable than keyStrokes for unicode)
         local prev = hs.pasteboard.getContents()
         hs.pasteboard.setContents(replacement)
-        hs.eventtap.keyStroke({"cmd"}, "v", 0)
-        -- Restore clipboard after a brief delay
-        if prev then
-            hs.timer.doAfter(0.1, function() hs.pasteboard.setContents(prev) end)
-        end
+        -- Delay paste to ensure deletes are processed first
+        hs.timer.doAfter(0.03, function()
+            hs.eventtap.keyStroke({"cmd"}, "v", 10000)
+            if prev then
+                hs.timer.doAfter(0.1, function() hs.pasteboard.setContents(prev) end)
+            end
+        end)
     end
 
     local watcher = hs.eventtap.new({hs.eventtap.event.types.keyDown}, function(event)
