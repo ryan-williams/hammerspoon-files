@@ -692,8 +692,8 @@ appShortcuts = {
   [                "Discord" ] = { modifiers =   'alt'           , key = 'd', wmKey = 'd' },
   [         "Docker Desktop" ] = { modifiers = { 'alt', 'shift' }, key = 'd', wmKey = {'shift', 'd'} },
   [              "1Password" ] = { modifiers =   'alt'           , key = '1' },
-  [                "Ghostty" ] = { modifiers =   'alt'           , key = 'g', wmKey = 'g' },
-  [                "Granola" ] = { modifiers = { 'alt', 'shift' }, key = 'g', wmKey = {'shift', 'g'} },
+  [                "Granola" ] = { modifiers =   'alt'           , key = 'g', wmKey = 'g' },
+  [                "Ghostty" ] = { modifiers = { 'alt', 'shift' }, key = 'g', wmKey = {'shift', 'g'} },
   [                  "Slack" ] = { modifiers =   'alt'           , key = 'k', wmKey = {'shift', 'k'} },  -- shift-k in WM (k conflicts with resize)
   [                 "Signal" ] = { modifiers =   'alt'           , key = 'n', wmKey = 'n' },
   [          "Final Cut Pro" ] = { modifiers =   'alt'           , key = 'p', wmKey = 'p' },
