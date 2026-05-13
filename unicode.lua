@@ -30,6 +30,7 @@ local shortcuts = {
     [";+"]   = "±",   -- plus-minus
     [";inf"] = "∞",   -- infinity
     [";o"]   = "°",   -- degree
+    [";deg"] = "°",   -- degree (alias)
     [";m"]   = "μ",   -- mu
     [";v"]   = "√",   -- square root
     [";x"]   = "×",   -- multiplication
@@ -69,6 +70,13 @@ local shortcuts = {
     [";bsp"] = "⌫",
     [";del"] = "⌦",
     [";esc"] = "⎋",
+
+    -- Emoji
+    [";grin"]  = "😀",
+    [";grim"]  = "😬",
+    [";think"] = "🤔",
+    [";thnk"]  = "🤔",
+    [";laugh"] = "😂",
 
     -- Common symbols
     [";."]   = "…",   -- ellipsis
