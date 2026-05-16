@@ -735,6 +735,29 @@ end
 hs.hotkey.bind({ 'alt', 'shift' }, 'f', function() openFinderAt('~/Downloads') end)
 hs.hotkey.bind({ 'alt', 'cmd', 'shift' }, 'f', function() openFinderAt('~/Screenshots') end)
 
+-- SuperWhisper mode: alt-shift-w, then a key for an action
+local function clickSuperWhisperMenuItem(item)
+  local script = string.format([[
+    tell application "System Events"
+      tell process "superwhisper"
+        click menu bar item 1 of menu bar 2
+        delay 0.1
+        click menu item "%s" of menu 1 of menu bar item 1 of menu bar 2
+      end tell
+    end tell
+  ]], item)
+  local ok, _, err = hs.osascript.applescript(script)
+  if not ok then
+    hs.alert.show("SuperWhisper '" .. item .. "' failed: " .. tostring(err))
+  end
+end
+
+sw = hs.hotkey.modal.new({ 'alt', 'shift' }, 'w')
+function sw:entered() hs.alert('SuperWhisper mode', 1) end
+sw:bind({ 'alt', 'shift' }, 'w', function() sw:exit() end)
+sw:bind('', 'escape', function() sw:exit() end)
+sw:bind('', 'h', function() sw:exit(); clickSuperWhisperMenuItem("History") end)
+
 -- Bind global app shortcuts and WM mode shortcuts from the table
 mapToArr(
     appShortcuts,
