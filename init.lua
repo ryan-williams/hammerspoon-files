@@ -851,10 +851,10 @@ function debugIntelliJWindows()
   end
 end
 
-hs.hotkey.bind({'alt'}, 'u', debugIntelliJWindows) -- Debug hotkey
-
-hs.hotkey.bind({'alt'}, 'i', function() focusIntelliJ(false) end) -- Local
-hs.hotkey.bind({'alt', 'shift'}, 'i', function() focusIntelliJ(true) end) -- Remote
+-- IntelliJ hotkeys disabled — opening reflexively when not needed, IJ OOMs the machine
+-- hs.hotkey.bind({'alt'}, 'u', debugIntelliJWindows) -- Debug hotkey
+-- hs.hotkey.bind({'alt'}, 'i', function() focusIntelliJ(false) end) -- Local
+-- hs.hotkey.bind({'alt', 'shift'}, 'i', function() focusIntelliJ(true) end) -- Remote
 
 -- iTerm pane management mode
 -- Add iterm module path and load it
