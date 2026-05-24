@@ -696,6 +696,7 @@ appShortcuts = {
   [                "Ghostty" ] = { modifiers = { 'alt', 'shift' }, key = 'g', wmKey = {'shift', 'g'} },
   [                  "Slack" ] = { modifiers =   'alt'           , key = 'k', wmKey = {'shift', 'k'} },  -- shift-k in WM (k conflicts with resize)
   [                 "Signal" ] = { modifiers =   'alt'           , key = 'n', wmKey = 'n' },
+  [     "Visual Studio Code" ] = { modifiers =   'alt'           , key = 'o' },  -- `o` already bound in WM mode ("only laptop" layout)
   [          "Final Cut Pro" ] = { modifiers =   'alt'           , key = 'p', wmKey = 'p' },
   [       "Quicktime Player" ] = { modifiers =   'alt'           , key = 'q', wmKey = 'q' },
   [     "System Preferences" ] = { modifiers =   'alt'           , key = 's', wmKey = 's' },
