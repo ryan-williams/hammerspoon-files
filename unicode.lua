@@ -28,6 +28,7 @@ local shortcuts = {
     [";<"]   = "≤",   -- less than or equal
     [";>"]   = "≥",   -- greater than or equal
     [";+"]   = "±",   -- plus-minus
+    [";pm"]  = "±",   -- plus-minus (alias)
     [";inf"] = "∞",   -- infinity
     [";o"]   = "°",   -- degree
     [";deg"] = "°",   -- degree (alias)
@@ -35,6 +36,34 @@ local shortcuts = {
     [";v"]   = "√",   -- square root
     [";x"]   = "×",   -- multiplication
     [";/"]   = "÷",   -- division
+
+    -- Greek letters
+    [";S"]   = "Σ",   -- capital sigma (sum)
+    [";s"]   = "σ",   -- lowercase sigma
+    [";e"]   = "ε",   -- epsilon
+    [";mu"]  = "μ",   -- mu (alias for `;m`)
+    [";a"]   = "α",   -- alpha
+    [";bt"]  = "β",   -- beta (`;b` is bullet)
+    [";g"]   = "γ",   -- gamma
+    [";G"]   = "Γ",   -- capital gamma
+    [";Dl"]  = "Δ",   -- capital delta (`;d` is down arrow, `;D` is ⇔)
+    [";dl"]  = "δ",   -- lowercase delta
+    [";th"]  = "θ",   -- theta
+    [";Th"]  = "Θ",   -- capital theta
+    [";pi"]  = "π",   -- pi (`;p` left unbound — too broad)
+    [";PI"]  = "Π",   -- capital pi (product)
+    [";ph"]  = "φ",   -- phi
+    [";Ph"]  = "Φ",   -- capital phi
+    [";w"]   = "ω",   -- omega
+    [";W"]   = "Ω",   -- capital omega
+    [";lm"]  = "λ",   -- lambda
+
+    -- Fractions (named to avoid `;1`/`;2`/... superscript conflicts)
+    [";hf"]  = "½",   -- half
+    [";tr"]  = "⅓",   -- third
+    [";tw"]  = "⅔",   -- two-thirds
+    [";qt"]  = "¼",   -- quarter
+    [";tq"]  = "¾",   -- three-quarters
 
     -- Superscript digits (both `;\d` and `;^\d` forms)
     [";0"]   = "⁰", [";^0"]  = "⁰",
