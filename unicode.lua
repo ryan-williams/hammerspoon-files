@@ -147,27 +147,45 @@ end
 function M.setup()
     local buffer = ""
     local pendingTimer = nil
+    local pendingTrigger = nil
+    local pendingReplacement = nil
+
+    -- Tag our synthesized events so the eventtap handler can ignore them when
+    -- they propagate back through (otherwise our own deletes/cmd+v get parsed
+    -- as if the user typed them, polluting buffer state).
+    local SYNTH_TAG = 0x554E4943  -- "UNIC"
+    local userDataProp = hs.eventtap.event.properties.eventSourceUserData
+
+    local function postTaggedKey(modifiers, key, isDown)
+        local ev = hs.eventtap.event.newKeyEvent(modifiers, key, isDown)
+        ev:setProperty(userDataProp, SYNTH_TAG)
+        ev:post()
+    end
 
     local function doReplace(trigger, replacement, deleteCount)
         buffer = ""
-        -- Delete the trigger characters already in the text
-        -- Use ~10ms keyDown/keyUp gap so apps (e.g. WhatsApp) process in order
         for i = 1, deleteCount do
-            hs.eventtap.keyStroke({}, "delete", 10000)
+            postTaggedKey({}, "delete", true)
+            hs.timer.usleep(10000)
+            postTaggedKey({}, "delete", false)
         end
-        -- Paste replacement via clipboard (more reliable than keyStrokes for unicode)
+        -- Paste replacement via clipboard (more reliable than keyStrokes for unicode).
         local prev = hs.pasteboard.getContents()
         hs.pasteboard.setContents(replacement)
-        -- Delay paste to ensure deletes are processed first
-        hs.timer.doAfter(0.03, function()
-            hs.eventtap.keyStroke({"cmd"}, "v", 10000)
-            if prev then
-                hs.timer.doAfter(0.1, function() hs.pasteboard.setContents(prev) end)
-            end
-        end)
+        postTaggedKey({"cmd"}, "v", true)
+        hs.timer.usleep(10000)
+        postTaggedKey({"cmd"}, "v", false)
+        if prev then
+            hs.timer.doAfter(0.1, function() hs.pasteboard.setContents(prev) end)
+        end
     end
 
     local watcher = hs.eventtap.new({hs.eventtap.event.types.keyDown}, function(event)
+        -- Skip our own synthesized events
+        if event:getProperty(userDataProp) == SYNTH_TAG then
+            return false
+        end
+
         local char = event:getCharacters()
         if not char or #char == 0 then return false end
 
@@ -196,9 +214,11 @@ function M.setup()
         -- Cancel any pending replacement
         local hadPending = nil
         if pendingTimer then
-            hadPending = {trigger = pendingTimer._trigger, replacement = pendingTimer._replacement}
+            hadPending = {trigger = pendingTrigger, replacement = pendingReplacement}
             pendingTimer:stop()
             pendingTimer = nil
+            pendingTrigger = nil
+            pendingReplacement = nil
         end
 
         -- Check if buffer ends with any trigger
@@ -210,15 +230,17 @@ function M.setup()
                     -- This trigger is a prefix of a longer one; wait briefly
                     local t = trigger
                     local r = replacement
+                    pendingTrigger = t
+                    pendingReplacement = r
                     pendingTimer = hs.timer.doAfter(0.3, function()
                         if M.debug then
                             print("[unicode] firing delayed: " .. t .. " -> " .. r)
                         end
                         doReplace(t, r, #t)
                         pendingTimer = nil
+                        pendingTrigger = nil
+                        pendingReplacement = nil
                     end)
-                    pendingTimer._trigger = t
-                    pendingTimer._replacement = r
                     return false
                 else
                     -- No ambiguity, fire immediately
