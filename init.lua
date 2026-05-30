@@ -345,6 +345,7 @@ k:bind('', 'm', function()
     return nil
   end
 
+  positionITerm2OnBig(external)
   layout(bigsmall(external, laptop))
 end)
 
@@ -533,7 +534,7 @@ end
 function bigsmall(big, sml)
   return {
   [   "Google Chrome" ] = { screen = big, shape = { x=0  , y=0, w=0.5, h=1 } },
-  [          "iTerm2" ] = { screen = big, shape = { x=0  , y=0, w=1  , h=1 } },
+  -- iTerm2 handled specially by positionITerm2OnBig (multi-window aware)
   [   "IntelliJ IDEA" ] = { screen = big, shape = { x=0.5, y=0, w=0.5, h=1 } },
   [            "Code" ] = { screen = big, shape = { x=0.5, y=0, w=0.5, h=1 } },
   [           "Slack" ] = { screen = big, shape = { x=0.5, y=0, w=0.5, h=1 } },
@@ -556,6 +557,66 @@ function laptopOnly(laptop)
     [          "Signal" ] = { screen = laptop, shape =  full },
     [        "WhatsApp" ] = { screen = laptop, shape =  full },
   }
+end
+
+-- Position iTerm2 windows on the big screen:
+--   2 windows already L/R → leave alone
+--   2 windows otherwise   → tile L/R
+--   1 window              → fullscreen on big
+--   3+ windows            → focused (or first) on L, rest on R
+function positionITerm2OnBig(bigScreen)
+  local iterm = hs.application.find("iTerm2")
+  if not iterm then return end
+
+  local windows = {}
+  for _, w in ipairs(iterm:allWindows()) do
+    if w:isStandard() then table.insert(windows, w) end
+  end
+  if #windows == 0 then return end
+
+  local f = bigScreen:frame()
+  local leftRect  = { x = f.x,             y = f.y, w = f.w / 2, h = f.h }
+  local rightRect = { x = f.x + f.w / 2,   y = f.y, w = f.w / 2, h = f.h }
+
+  local function approxEqual(a, b)
+    local tol = 30
+    return math.abs(a.x - b.x) < tol and math.abs(a.y - b.y) < tol
+       and math.abs(a.w - b.w) < tol and math.abs(a.h - b.h) < tol
+  end
+
+  if #windows == 1 then
+    windows[1]:setFrame(f)
+    return
+  end
+
+  if #windows == 2 then
+    local w1, w2 = windows[1], windows[2]
+    if w1:screen() == bigScreen and w2:screen() == bigScreen then
+      local f1, f2 = w1:frame(), w2:frame()
+      if (approxEqual(f1, leftRect)  and approxEqual(f2, rightRect)) or
+         (approxEqual(f1, rightRect) and approxEqual(f2, leftRect))  then
+        return  -- already L/R, leave alone
+      end
+    end
+    w1:setFrame(leftRect)
+    w2:setFrame(rightRect)
+    return
+  end
+
+  -- 3+ windows: focused iTerm window (else first) on L, rest on R
+  local focused = hs.window.focusedWindow()
+  local leftWin = nil
+  if focused then
+    for _, w in ipairs(windows) do
+      if w:id() == focused:id() then leftWin = w; break end
+    end
+  end
+  if not leftWin then leftWin = windows[1] end
+
+  for _, w in ipairs(windows) do
+    if w:id() == leftWin:id() then w:setFrame(leftRect)
+    else                           w:setFrame(rightRect) end
+  end
 end
 
 function layout(map)
@@ -633,6 +694,7 @@ hs.hotkey.bind(
         return nil
       end
 
+      positionITerm2OnBig(external)
       layout(bigsmall(external, laptop))
     end
 )
