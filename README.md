@@ -65,13 +65,75 @@ Toggle debug mode with `ctrl-shift-u` (logs keystrokes to HS console).
 | `;!` | ≠ | not equal |
 | `;<` | ≤ | less than or equal |
 | `;>` | ≥ | greater than or equal |
-| `;+` | ± | plus-minus |
-| `;8` | ∞ | infinity |
-| `;o` | ° | degree |
-| `;m` | μ | mu |
+| `;+`, `;pm` | ± | plus-minus |
+| `;inf` | ∞ | infinity |
+| `;o`, `;deg` | ° | degree |
+| `;m`, `;mu` | μ | mu |
 | `;v` | √ | square root |
 | `;x` | × | multiplication |
 | `;/` | ÷ | division |
+
+### Greek Letters
+
+| Trigger | Output | Description |
+|---------|--------|-------------|
+| `;a` | α | alpha |
+| `;bt` | β | beta (`;b` is bullet) |
+| `;g` | γ | gamma |
+| `;G` | Γ | capital gamma |
+| `;dl` | δ | delta (`;d` is down arrow) |
+| `;Dl` | Δ | capital delta (`;D` is ⇔) |
+| `;e` | ε | epsilon |
+| `;th` | θ | theta |
+| `;Th` | Θ | capital theta |
+| `;lm` | λ | lambda |
+| `;mu` | μ | mu (also `;m`) |
+| `;pi` | π | pi (`;p` left unbound) |
+| `;PI` | Π | capital pi (product) |
+| `;s` | σ | sigma |
+| `;S` | Σ | capital sigma (sum) |
+| `;ph` | φ | phi |
+| `;Ph` | Φ | capital phi |
+| `;w` | ω | omega |
+| `;W` | Ω | capital omega |
+
+### Fractions
+
+Named to avoid clashing with `;1`/`;2`/... superscript digits.
+
+| Trigger | Output | Description |
+|---------|--------|-------------|
+| `;hf` | ½ | half |
+| `;tr` | ⅓ | third |
+| `;tw` | ⅔ | two-thirds |
+| `;qt` | ¼ | quarter |
+| `;tq` | ¾ | three-quarters |
+
+### Superscript / Subscript Digits
+
+`;0`–`;9` and `;^0`–`;^9` both produce superscripts (the `;^N` form is available in case `;N` is overridden in the future). `;_0`–`;_9` produces subscripts.
+
+| Trigger | Output | | Trigger | Output |
+|---------|--------|-|---------|--------|
+| `;0`, `;^0` | ⁰ | | `;_0` | ₀ |
+| `;1`, `;^1` | ¹ | | `;_1` | ₁ |
+| `;2`, `;^2` | ² | | `;_2` | ₂ |
+| `;3`, `;^3` | ³ | | `;_3` | ₃ |
+| `;4`, `;^4` | ⁴ | | `;_4` | ₄ |
+| `;5`, `;^5` | ⁵ | | `;_5` | ₅ |
+| `;6`, `;^6` | ⁶ | | `;_6` | ₆ |
+| `;7`, `;^7` | ⁷ | | `;_7` | ₇ |
+| `;8`, `;^8` | ⁸ | | `;_8` | ₈ |
+| `;9`, `;^9` | ⁹ | | `;_9` | ₉ |
+
+### Emoji
+
+| Trigger | Output | Description |
+|---------|--------|-------------|
+| `;grin` | 😀 | grinning |
+| `;grim` | 😬 | grimacing |
+| `;think`, `;thnk` | 🤔 | thinking |
+| `;laugh` | 😂 | laughing |
 
 ### Modifier Keys
 
