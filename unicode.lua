@@ -9,7 +9,7 @@ local shortcuts = {
     [";r"]   = "→",   -- right arrow
     [";l"]   = "←",   -- left arrow
     [";u"]   = "↑",   -- up arrow
-    [";d"]   = "↓",   -- down arrow
+    [";dn"]  = "↓",   -- down arrow (`;d` is δ)
 
     -- Arrows (multi-char)
     [";lr"]  = "↔",   -- left-right arrow
@@ -29,6 +29,7 @@ local shortcuts = {
     [";>"]   = "≥",   -- greater than or equal
     [";+"]   = "±",   -- plus-minus
     [";pm"]  = "±",   -- plus-minus (alias)
+    [";in"]  = "∈",   -- element of
     [";inf"] = "∞",   -- infinity
     [";o"]   = "°",   -- degree
     [";deg"] = "°",   -- degree (alias)
@@ -40,13 +41,13 @@ local shortcuts = {
     -- Greek letters
     [";S"]   = "Σ",   -- capital sigma (sum)
     [";s"]   = "σ",   -- lowercase sigma
-    [";e"]   = "ε",   -- epsilon
+    [";ep"]  = "ε",   -- epsilon
     [";mu"]  = "μ",   -- mu (alias for `;m`)
     [";a"]   = "α",   -- alpha
     [";bt"]  = "β",   -- beta (`;b` is bullet)
     [";g"]   = "γ",   -- gamma
     [";G"]   = "Γ",   -- capital gamma
-    [";Dl"]  = "Δ",   -- capital delta (`;d` is down arrow, `;D` is ⇔)
+    [";d"]   = "Δ",   -- capital delta (↓ is `;dn`, `;D` is ⇔)
     [";dl"]  = "δ",   -- lowercase delta
     [";th"]  = "θ",   -- theta
     [";Th"]  = "Θ",   -- capital theta

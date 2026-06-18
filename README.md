@@ -46,7 +46,7 @@ Toggle debug mode with `ctrl-shift-u` (logs keystrokes to HS console).
 | `;r` | → | right arrow |
 | `;l` | ← | left arrow |
 | `;u` | ↑ | up arrow |
-| `;d` | ↓ | down arrow |
+| `;dn` | ↓ | down arrow (`;d` is δ) |
 | `;lr` | ↔ | left-right arrow |
 | `;R` | ⇒ | double right arrow |
 | `;L` | ⇐ | double left arrow |
@@ -66,6 +66,7 @@ Toggle debug mode with `ctrl-shift-u` (logs keystrokes to HS console).
 | `;<` | ≤ | less than or equal |
 | `;>` | ≥ | greater than or equal |
 | `;+`, `;pm` | ± | plus-minus |
+| `;in` | ∈ | element of |
 | `;inf` | ∞ | infinity |
 | `;o`, `;deg` | ° | degree |
 | `;m`, `;mu` | μ | mu |
@@ -81,9 +82,9 @@ Toggle debug mode with `ctrl-shift-u` (logs keystrokes to HS console).
 | `;bt` | β | beta (`;b` is bullet) |
 | `;g` | γ | gamma |
 | `;G` | Γ | capital gamma |
-| `;dl` | δ | delta (`;d` is down arrow) |
-| `;Dl` | Δ | capital delta (`;D` is ⇔) |
-| `;e` | ε | epsilon |
+| `;d` | Δ | capital delta (down arrow is `;dn`, `;D` is ⇔) |
+| `;dl` | δ | lowercase delta |
+| `;ep` | ε | epsilon |
 | `;th` | θ | theta |
 | `;Th` | Θ | capital theta |
 | `;lm` | λ | lambda |
