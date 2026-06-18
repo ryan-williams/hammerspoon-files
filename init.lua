@@ -798,6 +798,76 @@ end
 hs.hotkey.bind({ 'alt', 'shift' }, 'f', function() openFinderAt('~/Downloads') end)
 hs.hotkey.bind({ 'alt', 'cmd', 'shift' }, 'f', function() openFinderAt('~/Screenshots') end)
 
+-- Finder mode: alt-f, then follow-up key(s) opens Finder at a path
+local finderPaths = {
+  ['d']   = '~/Downloads',
+  ['a']   = '/Applications',
+  ['s']   = '~/Screenshots',
+  ['rw']  = '~',
+  ['oa']  = '~/c/oa',
+  ['c']   = '~/c',
+  ['h']   = '~/c/hccs',
+  ['rac'] = '~/c/rac',
+  ['rc']  = '~/.rc',
+}
+
+local function finderHasLongerPrefix(p)
+  for k, _ in pairs(finderPaths) do
+    if k ~= p and k:sub(1, #p) == p then return true end
+  end
+  return false
+end
+
+local finderMode = hs.hotkey.modal.new({ 'alt' }, 'f')
+local finderBuf = ""
+local finderTimer = nil
+
+function finderMode:entered()
+  finderBuf = ""
+  hs.alert('Finder mode', 1)
+end
+function finderMode:exited()
+  if finderTimer then finderTimer:stop(); finderTimer = nil end
+  finderBuf = ""
+end
+
+local function finderFire(path)
+  if finderTimer then finderTimer:stop(); finderTimer = nil end
+  finderMode:exit()
+  openFinderAt(path)
+end
+
+finderMode:bind({ 'alt' }, 'f', function() finderMode:exit() end)
+finderMode:bind('', 'escape',  function() finderMode:exit() end)
+
+-- Collect every distinct character used in any trigger
+local finderChars = {}
+for k, _ in pairs(finderPaths) do
+  for i = 1, #k do finderChars[k:sub(i, i)] = true end
+end
+
+for char, _ in pairs(finderChars) do
+  finderMode:bind('', char, function()
+    if finderTimer then finderTimer:stop(); finderTimer = nil end
+    finderBuf = finderBuf .. char
+    local exact = finderPaths[finderBuf]
+    local hasLonger = finderHasLongerPrefix(finderBuf)
+    if exact and not hasLonger then
+      finderFire(exact)
+    elseif exact and hasLonger then
+      local buf = finderBuf
+      finderTimer = hs.timer.doAfter(0.3, function()
+        if finderBuf == buf then finderFire(exact) end
+      end)
+    elseif hasLonger then
+      -- not an exact match yet but could extend — keep listening
+    else
+      hs.alert('Finder mode: unknown "' .. finderBuf .. '"', 1)
+      finderMode:exit()
+    end
+  end)
+end
+
 -- SuperWhisper mode: alt-shift-w, then a key for an action
 local function clickSuperWhisperMenuItem(item)
   local script = string.format([[
