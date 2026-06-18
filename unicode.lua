@@ -275,4 +275,99 @@ function M.setup()
           tostring(#prefixes) .. " prefix triggers)")
 end
 
+-- ---------------------------------------------------------------------------
+-- Unicode picker: a fuzzy-search chooser over the shortcuts table.
+-- Bind to a hotkey (e.g. alt-;) → search by char, trigger, or description.
+
+local function deriveName(trigger, char)
+    local d = trigger:match("^;_(%d)$")
+    if d then return "subscript " .. d end
+    d = trigger:match("^;%^?(%d)$")
+    if d then return "superscript " .. d end
+    return char
+end
+
+local function loadDescriptions()
+    -- Parse this file's source for per-line comment descriptions.
+    local src = debug.getinfo(1, "S").source:sub(2)
+    local descs = {}
+    local f = io.open(src, "r")
+    if not f then return descs end
+    for line in f:lines() do
+        local trigger, _, name = line:match('%[%s*"([^"]+)"%s*%]%s*=%s*"([^"]+)"%s*,?%s*%-%-%s*(.+)$')
+        if trigger then
+            descs[trigger] = (name or ""):gsub("%s+$", "")
+        end
+    end
+    f:close()
+    return descs
+end
+
+local emojiDbCache = nil
+local function loadEmojiDb()
+    if emojiDbCache ~= nil then return emojiDbCache end
+    local dir = debug.getinfo(1, "S").source:sub(2):match("(.*/)")
+    local path = (dir or "") .. "data/emoji.json"
+    local f = io.open(path, "r")
+    if not f then emojiDbCache = {}; return emojiDbCache end
+    local content = f:read("*all")
+    f:close()
+    local ok, data = pcall(hs.json.decode, content)
+    emojiDbCache = (ok and type(data) == "table") and data or {}
+    return emojiDbCache
+end
+
+local function buildPickerChoices()
+    local descs = loadDescriptions()
+    local choices = {}
+    local seenChar = {}
+
+    -- 1. The curated ;-shortcuts (arrows, math, Greek, etc.)
+    local entries = {}
+    for trigger, char in pairs(shortcuts) do
+        local name = descs[trigger] or deriveName(trigger, char)
+        table.insert(entries, { trigger = trigger, char = char, name = name })
+    end
+    table.sort(entries, function(a, b) return a.trigger < b.trigger end)
+    for _, e in ipairs(entries) do
+        table.insert(choices, {
+            text    = e.char .. "    " .. e.name,
+            subText = e.trigger,
+            char    = e.char,
+        })
+        seenChar[e.char] = true
+    end
+
+    -- 2. The full emoji database (gemoji), skipping any already shown above
+    for _, e in ipairs(loadEmojiDb()) do
+        if not seenChar[e.emoji] then
+            local aliases = e.aliases or {}
+            local tags    = e.tags    or {}
+            local searchBits = { e.description or "" }
+            for _, a in ipairs(aliases) do table.insert(searchBits, ":" .. a .. ":") end
+            for _, t in ipairs(tags)    do table.insert(searchBits, t) end
+            table.insert(choices, {
+                text    = e.emoji .. "    " .. (e.description or (aliases[1] or "")),
+                subText = table.concat(searchBits, "  "),
+                char    = e.emoji,
+            })
+            seenChar[e.emoji] = true
+        end
+    end
+
+    return choices
+end
+
+function M.show_picker()
+    local choices = buildPickerChoices()
+    local chooser = hs.chooser.new(function(choice)
+        if choice and choice.char then
+            hs.eventtap.keyStrokes(choice.char)
+        end
+    end)
+    chooser:choices(choices)
+    chooser:searchSubText(true)
+    chooser:show()
+end
+
 return M

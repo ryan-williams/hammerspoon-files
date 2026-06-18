@@ -935,6 +935,7 @@ local unicodeOk, unicode = pcall(require, "unicode")
 if unicodeOk then
   unicode.setup()
   hs.hotkey.bind({"ctrl", "shift"}, "u", function() unicode.toggle_debug() end)
+  hs.hotkey.bind({"alt"}, ";", function() unicode.show_picker() end)
 else
   print("Unicode module failed: " .. tostring(unicode))
 end
