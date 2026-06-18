@@ -708,7 +708,15 @@ hs.hotkey.bind(
     end
 )
 
+-- Focus mode state: when focusBlocked[appName] is true, focusApp(appName) no-ops.
+focusBlocked = {}
+
 function focusApp(name)
+  if focusBlocked[name] then
+    hs.alert(name..' blocked (focus mode)', 1)
+    return
+  end
+
   local app = hs.application.find(name)
   if app == nil then
     -- App not running, open it
@@ -756,8 +764,8 @@ appShortcuts = {
   [              "1Password" ] = { modifiers =   'alt'           , key = '1' },
   [                "Granola" ] = { modifiers =   'alt'           , key = 'g', wmKey = 'g' },
   [                "Ghostty" ] = { modifiers = { 'alt', 'shift' }, key = 'g', wmKey = {'shift', 'g'} },
-  [                  "Slack" ] = { modifiers =   'alt'           , key = 'k', wmKey = {'shift', 'k'} },  -- shift-k in WM (k conflicts with resize)
-  [                 "Signal" ] = { modifiers =   'alt'           , key = 'n', wmKey = 'n' },
+  [                  "Slack" ] = { modifiers =   'alt'           , key = 'k', wmKey = {'shift', 'k'}, focusable = true },  -- shift-k in WM (k conflicts with resize)
+  [                 "Signal" ] = { modifiers =   'alt'           , key = 'n', wmKey = 'n', focusable = true },
   [     "Visual Studio Code" ] = { modifiers =   'alt'           , key = 'o' },  -- `o` already bound in WM mode ("only laptop" layout)
   [          "Final Cut Pro" ] = { modifiers =   'alt'           , key = 'p', wmKey = 'p' },
   [       "Quicktime Player" ] = { modifiers =   'alt'           , key = 'q', wmKey = 'q' },
@@ -765,7 +773,7 @@ appShortcuts = {
   [                 "Safari" ] = { modifiers = { 'alt', 'cmd'   }, key = 's' },
   [                  "iTerm" ] = { modifiers =   'alt'           , key = 't', wmKey = 'i' },  -- 'i' in WM mode (t conflicts with throw)
   [                "Preview" ] = { modifiers =   'alt'           , key = 'v', wmKey = 'v' },
-  [               "WhatsApp" ] = { modifiers =   'alt'           , key = 'w', wmKey = 'w' },
+  [               "WhatsApp" ] = { modifiers =   'alt'           , key = 'w', wmKey = 'w', focusable = true },
   [                "zoom.us" ] = { modifiers =   'alt'           , key = 'z', wmKey = 'z' },
 }
 
@@ -920,6 +928,56 @@ mapToArr(
       end
     end
 )
+
+-- Focus mode: alt-x opens a modal listing apps marked `focusable` in appShortcuts.
+-- Pressing an app's hotkey letter toggles whether its global launch hotkey is blocked.
+local focusableApps = {}
+for name, sc in pairs(appShortcuts) do
+  if sc.focusable then
+    table.insert(focusableApps, { name = name, key = sc.key })
+  end
+end
+table.sort(focusableApps, function(a, b) return a.key < b.key end)
+
+local focusMode = hs.hotkey.modal.new({ 'alt' }, 'x')
+local focusAlertId = nil
+
+local function focusStatusText()
+  local lines = { 'Focus mode (alt-x to exit)' }
+  for _, app in ipairs(focusableApps) do
+    local mark = focusBlocked[app.name] and 'X' or ' '
+    table.insert(lines, ('[%s] %s  %s'):format(mark, app.key, app.name))
+  end
+  return table.concat(lines, '\n')
+end
+
+local function focusRedraw()
+  if focusAlertId then hs.alert.closeSpecific(focusAlertId) end
+  focusAlertId = hs.alert.show(focusStatusText(), 99999)
+end
+
+function focusMode:entered() focusRedraw() end
+function focusMode:exited()
+  if focusAlertId then hs.alert.closeSpecific(focusAlertId); focusAlertId = nil end
+  -- Brief reminder of what's still blocked
+  local blocked = {}
+  for _, app in ipairs(focusableApps) do
+    if focusBlocked[app.name] then table.insert(blocked, app.name) end
+  end
+  if #blocked > 0 then
+    hs.alert('Blocked: ' .. table.concat(blocked, ', '), 2)
+  end
+end
+
+focusMode:bind({ 'alt' }, 'x', function() focusMode:exit() end)
+focusMode:bind('', 'escape',  function() focusMode:exit() end)
+
+for _, app in ipairs(focusableApps) do
+  focusMode:bind('', app.key, function()
+    focusBlocked[app.name] = not focusBlocked[app.name]
+    focusRedraw()
+  end)
+end
 
 function listAllWindows()
   local windows = hs.window.allWindows()
