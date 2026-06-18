@@ -819,6 +819,7 @@ sw = hs.hotkey.modal.new({ 'alt', 'shift' }, 'w')
 function sw:entered() hs.alert('SuperWhisper mode', 1) end
 sw:bind({ 'alt', 'shift' }, 'w', function() sw:exit() end)
 sw:bind('', 'escape', function() sw:exit() end)
+sw:bind('', 'o', function() sw:exit(); hs.application.launchOrFocus("superwhisper") end)
 sw:bind('', 'h', function() sw:exit(); clickSuperWhisperMenuItem("History") end)
 
 -- Bind global app shortcuts and WM mode shortcuts from the table
