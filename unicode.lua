@@ -177,7 +177,9 @@ function M.setup()
         hs.timer.usleep(10000)
         postTaggedKey({"cmd"}, "v", false)
         if prev then
-            hs.timer.doAfter(0.1, function() hs.pasteboard.setContents(prev) end)
+            -- 500ms (not 100ms) so async paste handlers (Google Docs JS, etc.) finish reading
+            -- the pasteboard before we restore the previous contents.
+            hs.timer.doAfter(0.5, function() hs.pasteboard.setContents(prev) end)
         end
     end
 
