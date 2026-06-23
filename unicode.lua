@@ -317,6 +317,30 @@ local function loadEmojiDb()
     return emojiDbCache
 end
 
+-- Picker history (frecency = count / (1 + age_days)) is persisted via hs.settings,
+-- which serializes Lua tables under NSUserDefaults — no SQLite needed.
+local HISTORY_KEY = "unicode.picker.history"
+
+local function loadHistory()
+    return hs.settings.get(HISTORY_KEY) or {}
+end
+
+local function recordPick(char)
+    local history = loadHistory()
+    local entry = history[char] or { count = 0 }
+    entry.count = (entry.count or 0) + 1
+    entry.last  = os.time()
+    history[char] = entry
+    hs.settings.set(HISTORY_KEY, history)
+end
+
+local function frecency(history, char, now)
+    local entry = history[char]
+    if not entry then return 0 end
+    local age_days = (now - (entry.last or now)) / 86400
+    return (entry.count or 0) / (1 + age_days)
+end
+
 local function buildPickerChoices()
     local descs = loadDescriptions()
     local choices = {}
@@ -355,6 +379,20 @@ local function buildPickerChoices()
         end
     end
 
+    -- 3. Re-rank by frecency: recently-and-frequently-picked items float to the top.
+    -- Stable secondary sort keeps the curated section grouped (subText preserves order).
+    local history = loadHistory()
+    local now = os.time()
+    for i, c in ipairs(choices) do
+        c._score = frecency(history, c.char, now)
+        c._tiebreak = i  -- preserve original order within score=0 tier
+    end
+    table.sort(choices, function(a, b)
+        if a._score ~= b._score then return a._score > b._score end
+        return a._tiebreak < b._tiebreak
+    end)
+    for _, c in ipairs(choices) do c._score = nil; c._tiebreak = nil end
+
     return choices
 end
 
@@ -362,12 +400,19 @@ function M.show_picker()
     local choices = buildPickerChoices()
     local chooser = hs.chooser.new(function(choice)
         if choice and choice.char then
+            recordPick(choice.char)
             hs.eventtap.keyStrokes(choice.char)
         end
     end)
     chooser:choices(choices)
     chooser:searchSubText(true)
     chooser:show()
+end
+
+-- Expose for debugging / manual reset.
+function M.clear_picker_history()
+    hs.settings.set(HISTORY_KEY, {})
+    hs.alert.show("Unicode picker history cleared", 1)
 end
 
 return M
