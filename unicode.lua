@@ -91,22 +91,22 @@ local shortcuts = {
     [";_9"]  = "₉",
 
     -- Modifier keys (for docs)
-    [";cmd"] = "⌘",
-    [";opt"] = "⌥",
-    [";ctl"] = "⌃",
-    [";shf"] = "⇧",
-    [";tab"] = "⇥",
-    [";ret"] = "⏎",
-    [";bsp"] = "⌫",
-    [";del"] = "⌦",
-    [";esc"] = "⎋",
+    [";cmd"] = "⌘",   -- command
+    [";opt"] = "⌥",   -- option
+    [";ctl"] = "⌃",   -- control
+    [";shf"] = "⇧",   -- shift
+    [";tab"] = "⇥",   -- tab
+    [";ret"] = "⏎",   -- return
+    [";bsp"] = "⌫",   -- backspace
+    [";del"] = "⌦",   -- forward delete
+    [";esc"] = "⎋",   -- escape
 
     -- Emoji
-    [";grin"]  = "😀",
-    [";grim"]  = "😬",
-    [";think"] = "🤔",
-    [";thnk"]  = "🤔",
-    [";laugh"] = "😂",
+    [";grin"]  = "😀",   -- grinning face
+    [";grim"]  = "😬",   -- grimacing face
+    [";think"] = "🤔",   -- thinking face
+    [";thnk"]  = "🤔",   -- thinking face
+    [";laugh"] = "😂",   -- face with tears of joy
 
     -- Common symbols
     [";."]   = "…",   -- ellipsis
@@ -317,6 +317,16 @@ local function loadEmojiDb()
     return emojiDbCache
 end
 
+local emojiByCharCache = nil
+local function loadEmojiByChar()
+    if emojiByCharCache ~= nil then return emojiByCharCache end
+    emojiByCharCache = {}
+    for _, e in ipairs(loadEmojiDb()) do
+        emojiByCharCache[e.emoji] = e
+    end
+    return emojiByCharCache
+end
+
 -- Picker history (frecency = count / (1 + age_days)) is persisted via hs.settings,
 -- which serializes Lua tables under NSUserDefaults — no SQLite needed.
 local HISTORY_KEY = "unicode.picker.history"
@@ -341,22 +351,82 @@ local function frecency(history, char, now)
     return (entry.count or 0) / (1 + age_days)
 end
 
-local function buildPickerChoices()
-    local descs = loadDescriptions()
-    local choices = {}
-    local seenChar = {}
+-- Render `char` as an hs.image, used as each row's left-hand icon (replacing
+-- the chooser's default blue arrow with a big preview of the actual character).
+-- Cached per char for the life of the HS session; reuses one shared canvas so
+-- we avoid allocating ~2000 of them when the picker is first opened.
+local IMG_SIZE = 40
+local imageCache = {}
+local sharedRenderCanvas = nil
+local function imageForChar(char)
+    local cached = imageCache[char]
+    if cached then return cached end
+    if not sharedRenderCanvas then
+        sharedRenderCanvas = hs.canvas.new({ x = 0, y = 0, w = IMG_SIZE, h = IMG_SIZE })
+    end
+    sharedRenderCanvas[1] = {
+        type = "text",
+        text = hs.styledtext.new(char, {
+            font = { size = IMG_SIZE * 0.65 },
+            -- White so non-emoji symbols (→, α, ∈, …) show up on the chooser's
+            -- dark background. Color emoji ignore this and stay full-color.
+            color = { white = 1 },
+            paragraphStyle = { alignment = "center" },
+        }),
+        frame = { x = 0, y = IMG_SIZE * 0.1, w = IMG_SIZE, h = IMG_SIZE },
+    }
+    local img = sharedRenderCanvas:imageFromCanvas()
+    imageCache[char] = img
+    return img
+end
 
-    -- 1. The curated ;-shortcuts (arrows, math, Greek, etc.)
+-- Pick the row's main text. If we have a description, that's the text;
+-- otherwise show the trigger so the row is still useful.
+local function rowText(name, trigger, char)
+    if name and name ~= "" and name ~= char then return name end
+    return trigger
+end
+
+-- Pick a display name + collect fuzzy-search bits for a curated shortcut.
+-- Falls back: inline `--` comment → gemoji description → derived name.
+local function describeShortcut(trigger, char, descs, emojiByChar)
+    local entry = emojiByChar[char]
+    local name = descs[trigger]
+    if (not name or name == "") and entry then name = entry.description end
+    if not name or name == "" then name = deriveName(trigger, char) end
+    local bits = { trigger }
+    if name and name ~= "" and name ~= char then table.insert(bits, name) end
+    if entry then
+        for _, a in ipairs(entry.aliases or {}) do
+            if a and a ~= "" then table.insert(bits, ":" .. a .. ":") end
+        end
+        for _, t in ipairs(entry.tags or {}) do
+            if t and t ~= "" then table.insert(bits, t) end
+        end
+    end
+    return name, bits
+end
+
+local SUB_SEP = "   ·   "
+
+local function buildPickerChoices()
+    local descs       = loadDescriptions()
+    local emojiByChar = loadEmojiByChar()
+    local choices     = {}
+    local seenChar    = {}
+
+    -- 1. The curated ;-shortcuts (arrows, math, Greek, modifier keys, etc.)
     local entries = {}
     for trigger, char in pairs(shortcuts) do
-        local name = descs[trigger] or deriveName(trigger, char)
-        table.insert(entries, { trigger = trigger, char = char, name = name })
+        table.insert(entries, { trigger = trigger, char = char })
     end
     table.sort(entries, function(a, b) return a.trigger < b.trigger end)
     for _, e in ipairs(entries) do
+        local name, bits = describeShortcut(e.trigger, e.char, descs, emojiByChar)
         table.insert(choices, {
-            text    = e.char .. "    " .. e.name,
-            subText = e.trigger,
+            image   = imageForChar(e.char),
+            text    = rowText(name, e.trigger, e.char),
+            subText = table.concat(bits, SUB_SEP),
             char    = e.char,
         })
         seenChar[e.char] = true
@@ -367,12 +437,19 @@ local function buildPickerChoices()
         if not seenChar[e.emoji] then
             local aliases = e.aliases or {}
             local tags    = e.tags    or {}
-            local searchBits = { e.description or "" }
-            for _, a in ipairs(aliases) do table.insert(searchBits, ":" .. a .. ":") end
-            for _, t in ipairs(tags)    do table.insert(searchBits, t) end
+            local name    = e.description or aliases[1] or ""
+            local bits    = {}
+            if name and name ~= "" then table.insert(bits, name) end
+            for _, a in ipairs(aliases) do
+                if a and a ~= "" then table.insert(bits, ":" .. a .. ":") end
+            end
+            for _, t in ipairs(tags) do
+                if t and t ~= "" then table.insert(bits, t) end
+            end
             table.insert(choices, {
-                text    = e.emoji .. "    " .. (e.description or (aliases[1] or "")),
-                subText = table.concat(searchBits, "  "),
+                image   = imageForChar(e.emoji),
+                text    = rowText(name, aliases[1] or e.emoji, e.emoji),
+                subText = table.concat(bits, SUB_SEP),
                 char    = e.emoji,
             })
             seenChar[e.emoji] = true
@@ -397,7 +474,13 @@ local function buildPickerChoices()
 end
 
 function M.show_picker()
+    local t0 = hs.timer.secondsSinceEpoch()
     local choices = buildPickerChoices()
+    local elapsed = hs.timer.secondsSinceEpoch() - t0
+    if elapsed > 0.1 then
+        print(string.format("[unicode] built %d picker choices in %.2fs",
+            #choices, elapsed))
+    end
     local chooser = hs.chooser.new(function(choice)
         if choice and choice.char then
             recordPick(choice.char)
