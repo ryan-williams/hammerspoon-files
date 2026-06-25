@@ -92,6 +92,7 @@ local shortcuts = {
 
     -- Modifier keys (for docs)
     [";cmd"] = "⌘",   -- command
+    [";meta"] = "⌘",  -- command (alias)
     [";opt"] = "⌥",   -- option
     [";ctl"] = "⌃",   -- control
     [";shf"] = "⇧",   -- shift
