@@ -328,8 +328,9 @@ local function loadEmojiByChar()
     return emojiByCharCache
 end
 
--- Picker history (frecency = count / (1 + age_days)) is persisted via hs.settings,
--- which serializes Lua tables under NSUserDefaults — no SQLite needed.
+-- Picker history (MRU sort: last-picked floats to top, count is tiebreaker)
+-- is persisted via hs.settings, which serializes Lua tables under
+-- NSUserDefaults — no SQLite needed.
 local HISTORY_KEY = "unicode.picker.history"
 
 local function loadHistory()
@@ -343,13 +344,6 @@ local function recordPick(char)
     entry.last  = os.time()
     history[char] = entry
     hs.settings.set(HISTORY_KEY, history)
-end
-
-local function frecency(history, char, now)
-    local entry = history[char]
-    if not entry then return 0 end
-    local age_days = (now - (entry.last or now)) / 86400
-    return (entry.count or 0) / (1 + age_days)
 end
 
 -- Render `char` as an hs.image, used as each row's left-hand icon (replacing
@@ -457,19 +451,25 @@ local function buildPickerChoices()
         end
     end
 
-    -- 3. Re-rank by frecency: recently-and-frequently-picked items float to the top.
-    -- Stable secondary sort keeps the curated section grouped (subText preserves order).
+    -- 3. Re-rank MRU: most recently picked floats to the top, count breaks ties
+    -- (so a frequent favorite still beats a never-picked entry once their `last`
+    -- timestamps tie at 0). Original index preserves curated-section order
+    -- within the never-picked tier.
     local history = loadHistory()
-    local now = os.time()
     for i, c in ipairs(choices) do
-        c._score = frecency(history, c.char, now)
-        c._tiebreak = i  -- preserve original order within score=0 tier
+        local entry  = history[c.char]
+        c._last      = (entry and entry.last)  or 0
+        c._count     = (entry and entry.count) or 0
+        c._tiebreak  = i
     end
     table.sort(choices, function(a, b)
-        if a._score ~= b._score then return a._score > b._score end
+        if a._last  ~= b._last  then return a._last  > b._last  end
+        if a._count ~= b._count then return a._count > b._count end
         return a._tiebreak < b._tiebreak
     end)
-    for _, c in ipairs(choices) do c._score = nil; c._tiebreak = nil end
+    for _, c in ipairs(choices) do
+        c._last = nil; c._count = nil; c._tiebreak = nil
+    end
 
     return choices
 end
