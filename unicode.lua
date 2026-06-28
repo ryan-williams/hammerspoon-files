@@ -514,6 +514,29 @@ local function scoreToken(qLower, choice)
     return -1
 end
 
+-- Score a multi-word query. Word order is allowed to differ from the choice's
+-- text — e.g. "heart green" still finds 💚 green heart. Strategy:
+--   1. Try the whole query as one token (catches exact / starts-with cleanly).
+--   2. Split on whitespace, require ALL tokens to match somewhere; score by
+--      their per-token average minus a small constant so a literal exact match
+--      (1000) still outranks a multi-token AND match.
+-- The MAX of the two wins, so a single-token query keeps its original score.
+local function scoreQuery(qLower, choice)
+    if qLower == "" then return 0 end
+    local whole = scoreToken(qLower, choice)
+    local tokens = {}
+    for w in qLower:gmatch("%S+") do tokens[#tokens + 1] = w end
+    if #tokens <= 1 then return whole end
+    local total = 0
+    for _, t in ipairs(tokens) do
+        local s = scoreToken(t, choice)
+        if s < 0 then return whole end
+        total = total + s
+    end
+    local andScore = total / #tokens - 100
+    return andScore > whole and andScore or whole
+end
+
 function M.show_picker()
     local t0 = hs.timer.secondsSinceEpoch()
     local choices = buildPickerChoices()
@@ -537,7 +560,7 @@ function M.show_picker()
         local q = query:lower()
         local scored = {}
         for i, c in ipairs(choices) do
-            local s = scoreToken(q, c)
+            local s = scoreQuery(q, c)
             if s >= 0 then
                 scored[#scored + 1] = { c = c, score = s, idx = i }
             end
