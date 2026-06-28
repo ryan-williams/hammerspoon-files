@@ -418,11 +418,15 @@ local function buildPickerChoices()
     table.sort(entries, function(a, b) return a.trigger < b.trigger end)
     for _, e in ipairs(entries) do
         local name, bits = describeShortcut(e.trigger, e.char, descs, emojiByChar)
+        local text    = rowText(name, e.trigger, e.char)
+        local subText = table.concat(bits, SUB_SEP)
         table.insert(choices, {
-            image   = imageForChar(e.char),
-            text    = rowText(name, e.trigger, e.char),
-            subText = table.concat(bits, SUB_SEP),
-            char    = e.char,
+            image          = imageForChar(e.char),
+            text           = text,
+            subText        = subText,
+            char           = e.char,
+            _textLower     = text:lower(),
+            _subTextLower  = subText:lower(),
         })
         seenChar[e.char] = true
     end
@@ -441,11 +445,15 @@ local function buildPickerChoices()
             for _, t in ipairs(tags) do
                 if t and t ~= "" then table.insert(bits, t) end
             end
+            local text    = rowText(name, aliases[1] or e.emoji, e.emoji)
+            local subText = table.concat(bits, SUB_SEP)
             table.insert(choices, {
-                image   = imageForChar(e.emoji),
-                text    = rowText(name, aliases[1] or e.emoji, e.emoji),
-                subText = table.concat(bits, SUB_SEP),
-                char    = e.emoji,
+                image          = imageForChar(e.emoji),
+                text           = text,
+                subText        = subText,
+                char           = e.emoji,
+                _textLower     = text:lower(),
+                _subTextLower  = subText:lower(),
             })
             seenChar[e.emoji] = true
         end
@@ -474,6 +482,38 @@ local function buildPickerChoices()
     return choices
 end
 
+-- Score a single token against a choice. Higher = better match; negative =
+-- no match (filtered out). Tiers (descending):
+--   1000  text exactly equals token                ("fire"  vs "fire")
+--    800  text starts with token                   ("fire"  vs "fireworks")
+--    600  whole-word match inside text             ("fire"  vs "heart on fire")
+--    400  substring of text                        ("fire"  vs "campfire-x")
+--    300  subText starts with token                (";fir"  vs ";fire …")
+--    200  substring of subText (aliases, tags)     ("smile" vs grin's tags)
+-- Within a tier, shorter text wins (so "fire" beats "firefighter"); ties fall
+-- back to the choices' original (MRU) order via the caller's stable sort.
+local function scoreToken(qLower, choice)
+    if qLower == "" then return 0 end
+    local t = choice._textLower
+    if t == qLower then return 1000 end
+    if #qLower <= #t and t:sub(1, #qLower) == qLower then
+        return 800 - (#t - #qLower)
+    end
+    local pos = t:find(qLower, 1, true)
+    if pos then
+        local before = pos == 1
+            or not t:sub(pos - 1, pos - 1):match("%w")
+        local after = pos + #qLower - 1 == #t
+            or not t:sub(pos + #qLower, pos + #qLower):match("%w")
+        if before and after then return 600 - (#t - #qLower) end
+        return 400 - (#t - #qLower)
+    end
+    local s = choice._subTextLower
+    if #qLower <= #s and s:sub(1, #qLower) == qLower then return 300 end
+    if s:find(qLower, 1, true) then return 200 end
+    return -1
+end
+
 function M.show_picker()
     local t0 = hs.timer.secondsSinceEpoch()
     local choices = buildPickerChoices()
@@ -489,7 +529,27 @@ function M.show_picker()
         end
     end)
     chooser:choices(choices)
-    chooser:searchSubText(true)
+    chooser:queryChangedCallback(function(query)
+        if query == "" then
+            chooser:choices(choices)
+            return
+        end
+        local q = query:lower()
+        local scored = {}
+        for i, c in ipairs(choices) do
+            local s = scoreToken(q, c)
+            if s >= 0 then
+                scored[#scored + 1] = { c = c, score = s, idx = i }
+            end
+        end
+        table.sort(scored, function(a, b)
+            if a.score ~= b.score then return a.score > b.score end
+            return a.idx < b.idx
+        end)
+        local filtered = {}
+        for j, x in ipairs(scored) do filtered[j] = x.c end
+        chooser:choices(filtered)
+    end)
     chooser:show()
 end
 
