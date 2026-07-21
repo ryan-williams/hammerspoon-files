@@ -1047,16 +1047,6 @@ end
 -- hs.hotkey.bind({'alt'}, 'i', function() focusIntelliJ(false) end) -- Local
 -- hs.hotkey.bind({'alt', 'shift'}, 'i', function() focusIntelliJ(true) end) -- Remote
 
--- iTerm pane management mode
--- Add iterm module path and load it
-package.path = package.path .. ";" .. os.getenv("HOME") .. "/.rc/iterm/hammerspoon/?.lua"
-local itermOk, itermMode = pcall(require, "iterm")
-if itermOk then
-  itermMode.setup(k)  -- Pass window mgmt mode to enable T binding within it
-else
-  print("iTerm mode not loaded: " .. tostring(itermMode))
-end
-
 -- Unicode text expander
 package.path = package.path .. ";" .. os.getenv("HOME") .. "/.rc/hammerspoon/?.lua"
 local unicodeOk, unicode = pcall(require, "unicode")
