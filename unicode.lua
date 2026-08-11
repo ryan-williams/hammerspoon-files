@@ -114,6 +114,7 @@ local shortcuts = {
     [";-"]   = "—",   -- em dash
     [";n"]   = "–",   -- en dash
     [";b"]   = "•",   -- bullet
+    [";md"]  = "·",   -- middle dot
     [";y"]   = "✓",   -- check mark
     [";X"]   = "✗",   -- x mark
 }
@@ -426,7 +427,9 @@ local function buildPickerChoices()
             subText        = subText,
             char           = e.char,
             _textLower     = text:lower(),
-            _subTextLower  = subText:lower(),
+            -- Search on a plain-space-joined variant so the display SUB_SEP
+            -- ("·") isn't matched by every query that contains it.
+            _subTextLower  = table.concat(bits, " "):lower(),
         })
         seenChar[e.char] = true
     end
@@ -453,7 +456,7 @@ local function buildPickerChoices()
                 subText        = subText,
                 char           = e.emoji,
                 _textLower     = text:lower(),
-                _subTextLower  = subText:lower(),
+                _subTextLower  = table.concat(bits, " "):lower(),
             })
             seenChar[e.emoji] = true
         end
@@ -494,6 +497,10 @@ end
 -- back to the choices' original (MRU) order via the caller's stable sort.
 local function scoreToken(qLower, choice)
     if qLower == "" then return 0 end
+    -- Literal-char match: typing the char itself surfaces it (e.g. "·" finds
+    -- middle dot). Beats even exact text match — if you paste the character,
+    -- you're clearly looking for that character.
+    if qLower == choice.char then return 1200 end
     local t = choice._textLower
     if t == qLower then return 1000 end
     if #qLower <= #t and t:sub(1, #qLower) == qLower then
