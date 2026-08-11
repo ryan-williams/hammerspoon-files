@@ -554,28 +554,35 @@ local function buildPickerChoices()
         end
     end
 
-    -- 4. Re-rank MRU: most recently picked floats to the top, count breaks ties
-    -- (so a frequent favorite still beats a never-picked entry once their `last`
-    -- timestamps tie at 0). Original index preserves curated-section order
-    -- within the never-picked tier.
+    -- Stamp canonical build-order for use as a stable tiebreaker in later MRU
+    -- sorts. Kept on the choice — must NOT be wiped after sorting or the next
+    -- sort loses the "before any picks" ordering.
+    for i, c in ipairs(choices) do c._canonical = i end
+    return choices
+end
+
+-- Re-order `choices` in place: most recently picked floats to the top, count
+-- breaks ties (so a frequent favorite still beats a never-picked entry once
+-- their `last` timestamps tie at 0), then canonical build-order preserves the
+-- curated → emoji → unicode section grouping within the never-picked tier.
+local function sortChoicesByMRU(choices)
     local history = loadHistory()
-    for i, c in ipairs(choices) do
+    for _, c in ipairs(choices) do
         local entry  = history[c.char]
-        c._last      = (entry and entry.last)  or 0
-        c._count     = (entry and entry.count) or 0
-        c._tiebreak  = i
+        c._last  = (entry and entry.last)  or 0
+        c._count = (entry and entry.count) or 0
     end
     table.sort(choices, function(a, b)
         if a._last  ~= b._last  then return a._last  > b._last  end
         if a._count ~= b._count then return a._count > b._count end
-        return a._tiebreak < b._tiebreak
+        return a._canonical < b._canonical
     end)
-    for _, c in ipairs(choices) do
-        c._last = nil; c._count = nil; c._tiebreak = nil
-    end
-
-    return choices
 end
+
+-- Cache the raw choice list across shows: rendering ~4600 char images through
+-- hs.canvas is the slow part (a few hundred ms) and doesn't change between
+-- opens. The MRU sort re-runs on each show since pick history is mutable.
+local pickerChoicesCache = nil
 
 -- Score a single token against a choice. Higher = better match; negative =
 -- no match (filtered out). Tiers (descending):
@@ -636,25 +643,11 @@ local function scoreQuery(qLower, choice)
     return andScore > whole and andScore or whole
 end
 
-function M.show_picker()
-    local t0 = hs.timer.secondsSinceEpoch()
-    local choices = buildPickerChoices()
-    local elapsed = hs.timer.secondsSinceEpoch() - t0
-    if elapsed > 0.1 then
-        print(string.format("[unicode] built %d picker choices in %.2fs",
-            #choices, elapsed))
-    end
-    local chooser
-    chooser = hs.chooser.new(function(choice)
-        if choice and choice.char then
-            recordPick(choice.char)
-            local q = (chooser:query() or ""):lower()
-            recordQueryPick(q, choice.char)
-            hs.eventtap.keyStrokes(choice.char)
-        end
-    end)
-    chooser:choices(choices)
-    chooser:queryChangedCallback(function(query)
+-- Build the queryChangedCallback bound to a specific chooser + choice list.
+-- Extracted so we can install it either up-front (warm cache) or after the
+-- cold-cache build finishes.
+local function makeQueryCallback(chooser, choices)
+    return function(query)
         if query == "" then
             chooser:choices(choices)
             return
@@ -676,8 +669,61 @@ function M.show_picker()
         local filtered = {}
         for j, x in ipairs(scored) do filtered[j] = x.c end
         chooser:choices(filtered)
+    end
+end
+
+local function ensureChoicesCache()
+    if pickerChoicesCache then return end
+    local t0 = hs.timer.secondsSinceEpoch()
+    pickerChoicesCache = buildPickerChoices()
+    print(string.format("[unicode] built %d picker choices in %.2fs",
+        #pickerChoicesCache, hs.timer.secondsSinceEpoch() - t0))
+end
+
+function M.show_picker()
+    local chooser
+    chooser = hs.chooser.new(function(choice)
+        -- Guard: the "loading…" placeholder row has no `.char`, so a stray
+        -- Enter while we're still building is a no-op instead of a silent
+        -- dismiss with nothing typed.
+        if not choice or not choice.char then return end
+        recordPick(choice.char)
+        local q = (chooser:query() or ""):lower()
+        recordQueryPick(q, choice.char)
+        hs.eventtap.keyStrokes(choice.char)
     end)
+
+    if pickerChoicesCache then
+        sortChoicesByMRU(pickerChoicesCache)
+        chooser:choices(pickerChoicesCache)
+        chooser:queryChangedCallback(makeQueryCallback(chooser, pickerChoicesCache))
+        chooser:show()
+        return
+    end
+
+    -- Cold cache: pop the chooser up immediately with a visible "loading" row
+    -- and a placeholder in the input field, then build in the next runloop
+    -- tick so the chooser actually renders before we block the main thread.
+    -- The alternative (block, then show) leaves the user staring at nothing
+    -- after hitting the hotkey.
+    chooser:placeholderText("Building Unicode picker…")
+    chooser:choices({{
+        text    = "⏳ Building Unicode picker…",
+        subText = "loading ~4600 characters, one moment",
+    }})
     chooser:show()
+    hs.timer.doAfter(0, function()
+        ensureChoicesCache()
+        sortChoicesByMRU(pickerChoicesCache)
+        local qcb = makeQueryCallback(chooser, pickerChoicesCache)
+        chooser:queryChangedCallback(qcb)
+        chooser:choices(pickerChoicesCache)
+        chooser:placeholderText("")
+        -- If the user typed while we were building, apply that query now —
+        -- the callback we just registered wouldn't fire retroactively.
+        local curq = chooser:query()
+        if curq and curq ~= "" then qcb(curq) end
+    end)
 end
 
 -- Expose for debugging / manual reset.
@@ -686,5 +732,11 @@ function M.clear_picker_history()
     hs.settings.set(QUERY_HISTORY_KEY, {})
     hs.alert.show("Unicode picker history cleared", 1)
 end
+
+-- Prebuild picker choices ~1s after module load so the first hotkey press
+-- doesn't hang while we render ~4600 canvas images. Deferred so it doesn't
+-- lengthen `hs.reload()`; if the user beats the timer, show_picker's alert
+-- fallback covers it.
+hs.timer.doAfter(1.0, ensureChoicesCache)
 
 return M
