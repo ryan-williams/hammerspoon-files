@@ -347,6 +347,62 @@ local function recordPick(char)
     hs.settings.set(HISTORY_KEY, history)
 end
 
+-- Query-conditioned pick history: which char did the user pick, given the
+-- query text at pick time? Used to bias ranking so a repeatedly-picked result
+-- floats up when its query (or a related prefix) is typed again.
+-- Shape: { [query_lower] = { [char] = { count, last } } }
+local QUERY_HISTORY_KEY = "unicode.picker.query_history"
+
+local function loadQueryHistory()
+    return hs.settings.get(QUERY_HISTORY_KEY) or {}
+end
+
+local function recordQueryPick(query, char)
+    if not query or query == "" then return end
+    local qh = loadQueryHistory()
+    qh[query] = qh[query] or {}
+    local entry = qh[query][char] or { count = 0 }
+    entry.count = (entry.count or 0) + 1
+    entry.last  = os.time()
+    qh[query][char] = entry
+    hs.settings.set(QUERY_HISTORY_KEY, qh)
+end
+
+-- Given the current query q, build a `char -> boost` map from recorded picks.
+-- Rules:
+--   - Only recorded queries in a prefix relationship with q count (one is a
+--     prefix of the other). "sunset" won't inherit boosts from "sung".
+--   - Boost = count * common_prefix_len * K * decay, where decay falls off as
+--     |q| and |recQ| diverge in length (a much longer q suggests different
+--     intent even if the earlier query was a prefix).
+--   - Take the max across recorded queries per char (rather than summing) so a
+--     single overwhelmingly-picked entry doesn't pile up boosts.
+local BOOST_K = 200
+local function buildBoostMap(q, qh)
+    local boosts = {}
+    for recQ, chars in pairs(qh) do
+        local common = 0
+        local lim = math.min(#q, #recQ)
+        for i = 1, lim do
+            if q:sub(i, i) == recQ:sub(i, i) then common = i else break end
+        end
+        if common > 0 and common == lim then
+            local delta = math.abs(#q - #recQ)
+            local decay = math.max(0, 1 - delta * 0.3)
+            if decay > 0 then
+                local factor = common * BOOST_K * decay
+                for ch, entry in pairs(chars) do
+                    local candidate = (entry.count or 0) * factor
+                    if candidate > (boosts[ch] or 0) then
+                        boosts[ch] = candidate
+                    end
+                end
+            end
+        end
+    end
+    return boosts
+end
+
 -- Render `char` as an hs.image, used as each row's left-hand icon (replacing
 -- the chooser's default blue arrow with a big preview of the actual character).
 -- Cached per char for the life of the HS session; reuses one shared canvas so
@@ -552,9 +608,12 @@ function M.show_picker()
         print(string.format("[unicode] built %d picker choices in %.2fs",
             #choices, elapsed))
     end
-    local chooser = hs.chooser.new(function(choice)
+    local chooser
+    chooser = hs.chooser.new(function(choice)
         if choice and choice.char then
             recordPick(choice.char)
+            local q = (chooser:query() or ""):lower()
+            recordQueryPick(q, choice.char)
             hs.eventtap.keyStrokes(choice.char)
         end
     end)
@@ -565,11 +624,13 @@ function M.show_picker()
             return
         end
         local q = query:lower()
+        local boosts = buildBoostMap(q, loadQueryHistory())
         local scored = {}
         for i, c in ipairs(choices) do
             local s = scoreQuery(q, c)
             if s >= 0 then
-                scored[#scored + 1] = { c = c, score = s, idx = i }
+                local boost = boosts[c.char] or 0
+                scored[#scored + 1] = { c = c, score = s + boost, idx = i }
             end
         end
         table.sort(scored, function(a, b)
@@ -586,6 +647,7 @@ end
 -- Expose for debugging / manual reset.
 function M.clear_picker_history()
     hs.settings.set(HISTORY_KEY, {})
+    hs.settings.set(QUERY_HISTORY_KEY, {})
     hs.alert.show("Unicode picker history cleared", 1)
 end
 
