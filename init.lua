@@ -93,8 +93,34 @@ N = 10
 local resizeModeIndicators = {}
 
 k = hs.hotkey.modal.new('alt', 'a')
+
+-- Rapid-fire safety: eject WM mode when the user is clearly typing, not WMing.
+-- Watches ALL keyDown events (not just bound-key firings) so unbound keys that
+-- pass through to the focused app still register as "typing" — otherwise the
+-- vowels in "hello" leak into a text field silently while h/l fire WM actions,
+-- and we never notice you weren't in WM on purpose.
+--   - two DIFFERENT keys within RAPID_MS ejects
+--   - same key repeat is always fine (nudge chaining like `h h h h h`)
+--   - first key of any sequence still fires; only subsequent rapid keys eject
+--     (we can't cancel a key event that's already in-flight)
+local RAPID_MS = 0.150
+local lastKeyCode, lastKeyAt = nil, 0
+local wmRapidTap = hs.eventtap.new({ hs.eventtap.event.types.keyDown }, function(event)
+  local now  = hs.timer.secondsSinceEpoch()
+  local code = event:getKeyCode()
+  if lastKeyCode and code ~= lastKeyCode and (now - lastKeyAt) < RAPID_MS then
+    hs.alert.show("🛑 WM mode canceled (rapid input)", 1.5)
+    k:exit()
+  end
+  lastKeyCode = code
+  lastKeyAt   = now
+  return false  -- pass through
+end)
+
 function k:entered()
   hs.alert 'Resize mode'
+  lastKeyCode, lastKeyAt = nil, 0
+  wmRapidTap:start()
 
   -- Show indicator on all screens
   local allScreens = hs.screen.allScreens()
@@ -125,6 +151,7 @@ end
 
 function k:exited()
   hs.alert 'Exited resize mode'
+  wmRapidTap:stop()
 
   -- Hide all on-screen indicators
   for _, indicator in ipairs(resizeModeIndicators) do
