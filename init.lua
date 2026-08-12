@@ -1085,4 +1085,56 @@ else
   print("Unicode module failed: " .. tostring(unicode))
 end
 
+-- Action registry + omnibar palette (alt-p).
+-- Existing bindings above are left alone; new actions can register through
+-- `actions.register` to bind AND become searchable in one place. Migration is
+-- opt-in — for a legacy binding you want to show in the palette without
+-- rebinding, pass `hotkey_label` instead of `hotkey`.
+local actionsOk, actions = pcall(require, "actions")
+if actionsOk then
+  actions.register("actions.palette", {
+    name     = "Show Action Palette",
+    group    = "Hammerspoon",
+    keywords = "commands omnibar search",
+    hotkey   = { "alt", "p" },
+  }, actions.show_palette)
+
+  actions.register("hs.debug.toggle", {
+    name     = "Toggle HS Debug Logging",
+    group    = "Debug",
+    keywords = "logger verbose console",
+    hotkey   = { { "ctrl", "shift" }, "l" },
+  }, actions.toggle_hs_debug_logging)
+
+  -- Palette-only entries for actions already bound elsewhere. Add more as we
+  -- decide which legacy bindings are worth surfacing.
+  actions.register("hs.reload", {
+    name = "Reload Hammerspoon", group = "Hammerspoon",
+    keywords = "restart config",
+    hotkey_label = actions.hotkey_label("alt", "r"),
+  }, hs.reload)
+  actions.register("hs.console", {
+    name = "Toggle HS Console", group = "Hammerspoon",
+    keywords = "logs repl",
+    hotkey_label = "⌥A → C",
+  }, hs.toggleConsole)
+  actions.register("hs.hints", {
+    name = "Show Window Hints", group = "Windows",
+    keywords = "jump focus",
+    hotkey_label = actions.hotkey_label({ "alt", "shift" }, "h"),
+  }, hs.hints.windowHints)
+  actions.register("unicode.picker", {
+    name = "Unicode Picker", group = "Text",
+    keywords = "emoji character symbol arrow",
+    hotkey_label = actions.hotkey_label("alt", ";"),
+  }, function() if unicodeOk then unicode.show_picker() end end)
+  actions.register("unicode.debug.toggle", {
+    name = "Toggle Unicode Expander Debug", group = "Debug",
+    keywords = "unicode logger trigger",
+    hotkey_label = actions.hotkey_label({ "ctrl", "shift" }, "u"),
+  }, function() if unicodeOk then unicode.toggle_debug() end end)
+else
+  print("Actions module failed: " .. tostring(actions))
+end
+
 hs.alert.show("Config loaded: "..hs.screen.mainScreen():name())
