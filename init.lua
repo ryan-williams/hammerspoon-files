@@ -786,7 +786,7 @@ end
 appShortcuts = {
   [       "Activity Monitor" ] = { modifiers = { 'alt', 'cmd'   }, key = 'a' },
   [          "Google Chrome" ] = { modifiers = { 'alt', 'cmd'   }, key = 'c' },
-  [                "Discord" ] = { modifiers =   'alt'           , key = 'd', wmKey = 'd' },
+  [                "Discord" ] = { modifiers =   'alt'           , key = 'd', wmKey = 'd', focusable = true },
   [         "Docker Desktop" ] = { modifiers = { 'alt', 'shift' }, key = 'd', wmKey = {'shift', 'd'} },
   [              "1Password" ] = { modifiers =   'alt'           , key = '1' },
   [                "Granola" ] = { modifiers =   'alt'           , key = 'g', wmKey = 'g' },
