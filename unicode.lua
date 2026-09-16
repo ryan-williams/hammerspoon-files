@@ -803,19 +803,41 @@ end
 -- row that already matched). Recency uses an exp half-life so a just-picked char
 -- gets ~full weight and a day-old pick ~half; frequency is a gentler lifetime
 -- prior. _last/_count are stamped by sortChoicesByMRU before the callback runs.
+-- Returned as separate components so pick-logging can record the full feature
+-- breakdown, not just the sum (see logPick / specs/picker-ltr.md).
 local RECENCY_HALFLIFE = 86400  -- seconds (1 day)
-local function personalBoost(choice, now)
-    local b = (choice._prio or 0) * W.prio
+local function boostComponents(choice, now)
+    local prio = (choice._prio or 0) * W.prio
+    local recency = 0
     local last = choice._last or 0
     if last > 0 then
         local age = now - last
         if age < 0 then age = 0 end
-        b = b + W.recency * 0.5 ^ (age / RECENCY_HALFLIFE)
+        recency = W.recency * 0.5 ^ (age / RECENCY_HALFLIFE)
     end
+    local frequency = 0
     local count = choice._count or 0
-    if count > 0 then b = b + W.frequency * math.log(1 + count) end
-    return b
+    if count > 0 then frequency = W.frequency * math.log(1 + count) end
+    return prio, recency, frequency
 end
+
+local function personalBoost(choice, now)
+    local prio, recency, frequency = boostComponents(choice, now)
+    return prio + recency + frequency
+end
+
+-- Pick logging: append each pick (the ranked top-K slate that was shown → the
+-- chosen row, with every row's score-component breakdown) to a JSONL file, as
+-- training data for a possible future learned ranker. Feature components are
+-- logged at pick time because the time-dependent ones (recency/frequency/
+-- query_hist) can't be reconstructed later. Inference stays pure Lua; any
+-- training happens offline. See specs/picker-ltr.md.
+local LOG_SLATE_K = 20  -- rows retained per pick; the deep tail was never seen
+local pickLogPath = (hs.configdir or ((os.getenv("HOME") or ".") .. "/.hammerspoon"))
+    .. "/picker-picks.jsonl"
+-- The most recent ranked slate, stashed by makeQueryCallback for the pick
+-- callback to read (only one picker is open at a time).
+local lastSlate = nil
 
 -- Build the queryChangedCallback bound to a specific chooser + choice list.
 -- Extracted so we can install it either up-front (warm cache) or after the
@@ -844,7 +866,37 @@ local function makeQueryCallback(chooser, choices)
         local filtered = {}
         for j, x in ipairs(scored) do filtered[j] = x.c end
         chooser:choices(filtered)
+        -- Snapshot the top-K with per-feature breakdown for pick logging. Cheap:
+        -- recompute components for K rows only, leaving the scoring loop lean.
+        local rows = {}
+        for j = 1, math.min(LOG_SLATE_K, #scored) do
+            local x = scored[j]
+            local prio, recency, frequency = boostComponents(x.c, now)
+            rows[j] = {
+                char = x.c.char, rank = j, score = x.score,
+                match = scoreQuery(q, x.c),
+                prio = prio, recency = recency, frequency = frequency,
+                query_hist = boosts[x.c.char] or 0,
+            }
+        end
+        lastSlate = { query = q, rows = rows }
     end
+end
+
+-- Append one pick event as a JSONL line. Skips empty-query (MRU-list) picks —
+-- no query means no ranking signal — and stale slates (guarding against a slate
+-- from an earlier query/session). Best-effort: never break a pick on a log error.
+local function logPick(query, chosen)
+    if query == "" then return end
+    if not (hs.json and hs.json.encode) then return end
+    if not (lastSlate and lastSlate.query == query) then return end
+    local rec = { ts = os.time(), query = query, chosen = chosen, slate = lastSlate.rows }
+    local ok, line = pcall(hs.json.encode, rec)
+    if not ok or not line then return end
+    local fh = io.open(pickLogPath, "a")
+    if not fh then return end
+    fh:write(line, "\n")
+    fh:close()
 end
 
 local function ensureChoicesCache()
@@ -865,6 +917,7 @@ function M.show_picker()
         recordPick(choice.char)
         local q = (chooser:query() or ""):lower()
         recordQueryPick(q, choice.char)
+        logPick(q, choice.char)
         hs.eventtap.keyStrokes(choice.char)
     end)
 
