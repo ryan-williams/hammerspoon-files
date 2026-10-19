@@ -649,9 +649,6 @@ function positionITerm2OnBig(bigScreen)
   end
 end
 
-function layout(map)
-  -- Filter out applications that aren't currently running
-  local layoutTable = {}
 -- Find a running app by name, case-insensitively, also accepting its `.app`
 -- bundle basename (VS Code runs as "Code" from "Visual Studio Code.app").
 -- Unlike `hs.application.find`, a miss never falls back to `hs.window.find`,
@@ -670,6 +667,9 @@ function findApp(name)
   end
 end
 
+function layout(map)
+  -- Filter out applications that aren't currently running
+  local layoutTable = {}
   for appName, config in pairs(map) do
     local app = findApp(appName)
     if app then
@@ -922,6 +922,130 @@ for char, _ in pairs(finderChars) do
       finderMode:exit()
     end
   end)
+end
+
+-- Chrome mode: alt-c, then a key jumps to that Chrome profile; shift+key moves
+-- the current tab there instead (for links that opened in the wrong profile).
+-- Chrome's AppleScript hides each window's profile, but its AX window title
+-- (what `hs.window:title()` returns) ends in " - Ryan (<profile name>)", so a
+-- jump focuses the frontmost matching window directly. With no window open, it
+-- falls back to `open --profile-directory <url>` (which adds a tab to that
+-- profile's most recent window, or opens one) with a throwaway `data:` marker.
+local chromeProfiles = {
+  ['r'] = { name = 'RACx',    dir = 'Default'    },
+  ['h'] = { name = 'HCCSx',   dir = 'Profile 4'  },
+  ['o'] = { name = 'OAx',     dir = 'Profile 3'  },
+  ['n'] = { name = 'NBDx',    dir = 'Profile 1'  },
+  ['w'] = { name = 'RBW',     dir = 'Profile 2'  },
+  ['e'] = { name = 'EPC',     dir = 'Profile 14' },  -- ryan@embankment.org (not Profile 12)
+  ['b'] = { name = 'BJCx',    dir = 'Profile 7'  },
+  ['s'] = { name = 'SPNJ',    dir = 'Profile 16' },
+  ['3'] = { name = '380NWKx', dir = 'Profile 13' },  -- ryan@380nwk.org (not Profile 10)
+}
+
+local function chromeOpenInProfile(dir, url)
+  hs.task.new('/usr/bin/open', nil,
+    { '-na', 'Google Chrome', '--args', '--profile-directory=' .. dir, url }):start()
+end
+
+local function chromeScript(script)
+  local ok, result, err = hs.osascript.applescript(script)
+  if not ok then hs.alert('Chrome: ' .. tostring(err and err.NSAppleScriptErrorMessage or err), 2) end
+  return ok, result
+end
+
+-- Close the marker tab once Chrome has opened it (polls; launch latency varies).
+-- If it landed in a fresh window (profile had none open), keep the window and
+-- point it at a new tab page instead.
+local function chromeCloseMarker(marker, tries, onClosed)
+  local script = string.format([[
+    tell application "Google Chrome"
+      repeat with w in windows
+        repeat with t in tabs of w
+          if URL of t is "%s" then
+            if (count tabs of w) is 1 then
+              set URL of t to "chrome://newtab/"
+            else
+              close t
+            end if
+            return true
+          end if
+        end repeat
+      end repeat
+      return false
+    end tell
+  ]], marker)
+  local ok, found = hs.osascript.applescript(script)
+  if ok and found then
+    if onClosed then onClosed() end
+  elseif tries > 1 then
+    hs.timer.doAfter(0.2, function() chromeCloseMarker(marker, tries - 1, onClosed) end)
+  end
+end
+
+-- Frontmost window of `profile` (minimized / other-Space windows as fallback).
+local function chromeWindowFor(profile)
+  local suffix = ' - Ryan (' .. profile.name .. ')'
+  local function matches(w)
+    local app = w:application()
+    local title = w:title() or ''
+    return app and app:bundleID() == 'com.google.Chrome' and title:sub(-#suffix) == suffix
+  end
+  for _, w in ipairs(hs.window.orderedWindows()) do
+    if matches(w) then return w end
+  end
+  local chrome = hs.application.get('com.google.Chrome')
+  for _, w in ipairs(chrome and chrome:allWindows() or {}) do
+    if matches(w) then return w end
+  end
+end
+
+local function chromeJump(profile)
+  local w = chromeWindowFor(profile)
+  if w then
+    if w:isMinimized() then w:unminimize() end
+    w:focus()
+    return
+  end
+  local marker = 'data:text/html,hs-jump-' .. hs.timer.absoluteTime()
+  chromeOpenInProfile(profile.dir, marker)
+  -- A background `open` doesn't activate Chrome, so raise the window ourselves.
+  hs.timer.doAfter(0.3, function()
+    chromeCloseMarker(marker, 15, function()
+      local win = chromeWindowFor(profile)
+      if win then win:focus() end
+    end)
+  end)
+end
+
+local function chromeMoveTab(profile)
+  if hs.application.frontmostApplication():name() ~= 'Google Chrome' then
+    hs.alert('Chrome mode: Chrome not frontmost', 1)
+    return
+  end
+  local ok, res = chromeScript([[
+    tell application "Google Chrome"
+      set w to front window
+      set t to active tab of w
+      return {URL of t, id of t, id of w}
+    end tell
+  ]])
+  if not ok then return end
+  local url, tabId, winId = res[1], res[2], res[3]
+  chromeOpenInProfile(profile.dir, url)
+  chromeScript(string.format([[
+    tell application "Google Chrome" to close (tab id %d of window id %d)
+  ]], tabId, winId))
+  hs.alert('→ ' .. profile.name, 1)
+end
+
+local chromeMode = hs.hotkey.modal.new({ 'alt' }, 'c')
+function chromeMode:entered() hs.alert('Chrome mode', 1) end
+chromeMode:bind({ 'alt' }, 'c', function() chromeMode:exit() end)
+chromeMode:bind('', 'escape',  function() chromeMode:exit() end)
+for key, profile in pairs(chromeProfiles) do
+  chromeMode:bind('', key, function() chromeMode:exit(); chromeJump(profile) end)
+  chromeMode:bind({ 'shift' }, key, function() chromeMode:exit(); chromeMoveTab(profile) end)
 end
 
 -- SuperWhisper mode: alt-shift-w, then a key for an action
