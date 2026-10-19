@@ -649,10 +649,28 @@ end
 function layout(map)
   -- Filter out applications that aren't currently running
   local layoutTable = {}
+-- Find a running app by name, case-insensitively, also accepting its `.app`
+-- bundle basename (VS Code runs as "Code" from "Visual Studio Code.app").
+-- Unlike `hs.application.find`, a miss never falls back to `hs.window.find`,
+-- which walks every window of every app via AX and stalls on slow apps.
+function findApp(name)
+  local lname = name:lower()
+  for _, app in ipairs(hs.application.runningApplications()) do
+    -- kind -1 = background-only; some have no bundle, and `:path()` throws.
+    if app:kind() >= 0 then
+      local aname = app:name()
+      if aname and aname:lower() == lname then return app end
+      local ok, path = pcall(app.path, app)
+      local base = ok and path and path:match('([^/]+)%.app$')
+      if base and base:lower() == lname then return app end
+    end
+  end
+end
+
   for appName, config in pairs(map) do
-    local app = hs.application.find(appName)
+    local app = findApp(appName)
     if app then
-      table.insert(layoutTable, { appName, nil, config.screen, config.shape, nil, nil })
+      table.insert(layoutTable, { app, nil, config.screen, config.shape, nil, nil })
     end
   end
 
@@ -744,7 +762,7 @@ function focusApp(name)
     return
   end
 
-  local app = hs.application.find(name)
+  local app = findApp(name)
   if app == nil then
     -- App not running, open it
     hs.alert('Opening '..name)
@@ -796,7 +814,7 @@ appShortcuts = {
   [     "Visual Studio Code" ] = { modifiers =   'alt'           , key = 'o' },  -- `o` already bound in WM mode ("only laptop" layout)
   [          "Final Cut Pro" ] = { modifiers =   'alt'           , key = 'p', wmKey = 'p' },
   [       "Quicktime Player" ] = { modifiers =   'alt'           , key = 'q', wmKey = 'q' },
-  [     "System Preferences" ] = { modifiers =   'alt'           , key = 's', wmKey = 's' },
+  [        "System Settings" ] = { modifiers =   'alt'           , key = 's', wmKey = 's' },
   [                 "Safari" ] = { modifiers = { 'alt', 'cmd'   }, key = 's' },
   [                  "iTerm" ] = { modifiers =   'alt'           , key = 't', wmKey = 'i' },  -- 'i' in WM mode (t conflicts with throw)
   [                "Preview" ] = { modifiers =   'alt'           , key = 'v', wmKey = 'v' },
