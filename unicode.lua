@@ -25,8 +25,11 @@ local shortcuts = {
     -- Math / comparison
     [";~"]   = "≈",   -- almost equal
     [";!"]   = "≠",   -- not equal
+    [";ne"]  = "≠",   -- not equal (alias)
     [";<"]   = "≤",   -- less than or equal
+    [";le"]  = "≤",   -- less than or equal (alias)
     [";>"]   = "≥",   -- greater than or equal
+    [";ge"]  = "≥",   -- greater than or equal (alias)
     [";+"]   = "±",   -- plus-minus
     [";pm"]  = "±",   -- plus-minus (alias)
     [";in"]  = "∈",   -- element of
@@ -569,12 +572,24 @@ local function buildPickerChoices()
         appendExtraKeywords(bits, char)
         local text    = rowText(name, triggers[1], char)
         local subText = table.concat(bits, SUB_SEP)
+        -- Query is lowercased before scoring, so `;PI` and `;pi` both answer
+        -- "pi"; a case-folded trigger takes a 1-point penalty so π wins.
+        -- Maps lowercased trigger (with and without `;`) → penalty.
+        local triggerSet = {}
+        for _, tr in ipairs(triggers) do
+            local tl = tr:lower()
+            local penalty = tl == tr and 0 or 1
+            for _, key in ipairs({ tl, tl:sub(2) }) do
+                if (triggerSet[key] or 1) >= penalty then triggerSet[key] = penalty end
+            end
+        end
         table.insert(choices, {
             image          = imageForChar(char),
             text           = text,
             subText        = subText,
             char           = char,
             _prio          = 1,  -- curated + emoji outrank the bulk Unicode db
+            _triggers      = triggerSet,
             _textLower     = text:lower(),
             -- Search on a plain-space-joined variant so the display SUB_SEP
             -- ("·") isn't matched by every query that contains it.
@@ -671,6 +686,7 @@ local pickerChoicesCache = nil
 --
 -- MATCH tiers (descending), each on a token vs. a row:
 --   1200 literal_char  query IS the char             ("·"    → middle dot)
+--   1000 trigger       token is a `;`-trigger, `;` optional ("ge" → ≥)
 --   1000 exact_text    text == token                 ("fire" → "fire")
 --    800 prefix_text   text starts with token        ("fire" → "fireworks")
 --    600 word_text     whole-word hit inside text     ("fire" → "heart on fire")
@@ -689,6 +705,7 @@ local pickerChoicesCache = nil
 -- fall back to the choices' original (MRU) order via the caller's stable sort.
 local W = {
     literal_char = 1200,
+    trigger      = 1000,
     exact_text   = 1000,
     prefix_text  = 800,
     word_text    = 600,
@@ -732,6 +749,8 @@ local function scoreToken(qLower, choice)
     -- middle dot). Beats even exact text match — if you paste the character,
     -- you're clearly looking for that character.
     if qLower == choice.char then return W.literal_char end
+    local penalty = choice._triggers and choice._triggers[qLower]
+    if penalty then return W.trigger - penalty end
     local t = choice._textLower
     if t == qLower then return W.exact_text end
     if #qLower <= #t and t:sub(1, #qLower) == qLower then

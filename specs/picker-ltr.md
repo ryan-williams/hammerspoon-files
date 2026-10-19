@@ -15,7 +15,7 @@ score = matchScore(q, row)            -- mutually-exclusive tiers, best one wins
 ```
 
 - All weights live in one table, `W` (near `scoreToken`). Tune ranking there.
-- `scoreToken` returns the MATCH component only (one tier: `literal_char` 1200 → `exact_text` 1000 → `prefix_text` 800 → `word_text` 600 → `phrase_sub` 500 → `substr_text` 400 → `prefix_sub` 300 → `substr_sub` 200 → `stem_sub` 150 → `subseq_text` 100). Within a text tier, a length penalty (`- (#t - #q)`) breaks ties toward shorter names.
+- `scoreToken` returns the MATCH component only (one tier: `literal_char` 1200 → `trigger` 1000 (query is a curated `;`-trigger, `;` optional) → `exact_text` 1000 → `prefix_text` 800 → `word_text` 600 → `phrase_sub` 500 → `substr_text` 400 → `prefix_sub` 300 → `substr_sub` 200 → `stem_sub` 150 → `subseq_text` 100). Within a text tier, a length penalty (`- (#t - #q)`) breaks ties toward shorter names.
 - `scoreQuery` handles multi-token AND matching; still returns pure match.
 - `personalBoost(choice, now)` applies the additive priors (`prio`/`recency`/`frequency`). `_last`/`_count` are stamped onto each choice by `sortChoicesByMRU` before the query callback runs.
 - `makeQueryCallback` sums it all: `scoreQuery + personalBoost + buildBoostMap`.
