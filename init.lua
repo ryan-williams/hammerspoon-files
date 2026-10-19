@@ -1,3 +1,6 @@
+-- `hs` CLI access (`hs -c 'hs.reload()'`), so scripts/agents can reload + test.
+require("hs.ipc")
+
 hs.application.enableSpotlightForNameSearches(true)
 
 hs.hotkey.bind({"alt"}, "r", function() hs.reload() end)
